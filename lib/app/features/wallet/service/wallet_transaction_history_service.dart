@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:the_builder_studio/app/features/wallet/model/wallet_transaction_history_model.dart';
+import 'package:infinity_wellness/app/features/wallet/model/wallet_transaction_history_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class WalletTransactionHistoryService {

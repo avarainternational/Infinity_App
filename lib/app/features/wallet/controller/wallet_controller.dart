@@ -1,19 +1,19 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:the_builder_studio/app/constant/resources/app_string.dart';
-import 'package:the_builder_studio/app/constant/routing/app_route.dart';
-import 'package:the_builder_studio/app/core/base/base_controller.dart';
-import 'package:the_builder_studio/app/core/config/loyalty_system_config.dart';
-import 'package:the_builder_studio/app/features/wallet/model/customer_wallet_access.dart';
-import 'package:the_builder_studio/app/features/wallet/model/wallet_transaction_history_model.dart';
-import 'package:the_builder_studio/app/features/wallet/service/customer_access_import_service.dart';
-import 'package:the_builder_studio/app/features/wallet/service/recipient_validation_service.dart';
-import 'package:the_builder_studio/app/features/wallet/service/wallet_activation_storage_service.dart';
-import 'package:the_builder_studio/app/features/wallet/service/wallet_transaction_history_service.dart';
-import 'package:the_builder_studio/app/features/wallet/service/wallet_unlock_service.dart';
-import 'package:the_builder_studio/app/features/wallet/utility/loyalty_points_result.dart';
-import 'package:the_builder_studio/app/features/wallet/utility/loyalty_points_sdk.dart';
+import 'package:infinity_wellness/app/constant/resources/app_string.dart';
+import 'package:infinity_wellness/app/constant/routing/app_route.dart';
+import 'package:infinity_wellness/app/core/base/base_controller.dart';
+import 'package:infinity_wellness/app/core/config/loyalty_system_config.dart';
+import 'package:infinity_wellness/app/features/wallet/model/customer_wallet_access.dart';
+import 'package:infinity_wellness/app/features/wallet/model/wallet_transaction_history_model.dart';
+import 'package:infinity_wellness/app/features/wallet/service/customer_access_import_service.dart';
+import 'package:infinity_wellness/app/features/wallet/service/recipient_validation_service.dart';
+import 'package:infinity_wellness/app/features/wallet/service/wallet_activation_storage_service.dart';
+import 'package:infinity_wellness/app/features/wallet/service/wallet_transaction_history_service.dart';
+import 'package:infinity_wellness/app/features/wallet/service/wallet_unlock_service.dart';
+import 'package:infinity_wellness/app/features/wallet/utility/loyalty_points_result.dart';
+import 'package:infinity_wellness/app/features/wallet/utility/loyalty_points_sdk.dart';
 
 enum WalletState { loading, configMissing, ready, activated, error }
 

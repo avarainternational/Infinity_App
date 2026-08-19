@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:the_builder_studio/main_app.dart';
+import 'package:infinity_wellness/main_app.dart';
 
 void main() {
   testWidgets('shows Infinity Wellness Super App shell and tabs', (tester) async {

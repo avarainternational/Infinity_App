@@ -1,14 +1,14 @@
 import 'package:get/get.dart';
-import 'package:the_builder_studio/app/features/wallet/controller/wallet_controller.dart';
-import 'package:the_builder_studio/app/features/wallet/service/customer_access_import_service.dart';
-import 'package:the_builder_studio/app/features/wallet/service/recipient_validation_service.dart';
-import 'package:the_builder_studio/app/features/wallet/service/wallet_activation_storage_service.dart';
-import 'package:the_builder_studio/app/features/wallet/service/wallet_balance_service.dart';
-import 'package:the_builder_studio/app/features/wallet/service/wallet_signing_service.dart';
-import 'package:the_builder_studio/app/features/wallet/service/wallet_transaction_history_service.dart';
-import 'package:the_builder_studio/app/features/wallet/service/wallet_unlock_service.dart';
-import 'package:the_builder_studio/app/features/wallet/utility/default_loyalty_points_sdk.dart';
-import 'package:the_builder_studio/app/features/wallet/utility/loyalty_points_sdk.dart';
+import 'package:infinity_wellness/app/features/wallet/controller/wallet_controller.dart';
+import 'package:infinity_wellness/app/features/wallet/service/customer_access_import_service.dart';
+import 'package:infinity_wellness/app/features/wallet/service/recipient_validation_service.dart';
+import 'package:infinity_wellness/app/features/wallet/service/wallet_activation_storage_service.dart';
+import 'package:infinity_wellness/app/features/wallet/service/wallet_balance_service.dart';
+import 'package:infinity_wellness/app/features/wallet/service/wallet_signing_service.dart';
+import 'package:infinity_wellness/app/features/wallet/service/wallet_transaction_history_service.dart';
+import 'package:infinity_wellness/app/features/wallet/service/wallet_unlock_service.dart';
+import 'package:infinity_wellness/app/features/wallet/utility/default_loyalty_points_sdk.dart';
+import 'package:infinity_wellness/app/features/wallet/utility/loyalty_points_sdk.dart';
 
 class WalletBinding extends Bindings {
   @override

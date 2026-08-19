@@ -1,11 +1,11 @@
-import 'package:the_builder_studio/app/core/config/loyalty_system_config.dart';
-import 'package:the_builder_studio/app/features/wallet/service/recipient_validation_service.dart';
-import 'package:the_builder_studio/app/features/wallet/service/wallet_activation_storage_service.dart';
-import 'package:the_builder_studio/app/features/wallet/service/wallet_balance_service.dart';
-import 'package:the_builder_studio/app/features/wallet/service/wallet_signing_service.dart';
-import 'package:the_builder_studio/app/features/wallet/service/wallet_unlock_service.dart';
-import 'package:the_builder_studio/app/features/wallet/utility/loyalty_points_result.dart';
-import 'package:the_builder_studio/app/features/wallet/utility/loyalty_points_sdk.dart';
+import 'package:infinity_wellness/app/core/config/loyalty_system_config.dart';
+import 'package:infinity_wellness/app/features/wallet/service/recipient_validation_service.dart';
+import 'package:infinity_wellness/app/features/wallet/service/wallet_activation_storage_service.dart';
+import 'package:infinity_wellness/app/features/wallet/service/wallet_balance_service.dart';
+import 'package:infinity_wellness/app/features/wallet/service/wallet_signing_service.dart';
+import 'package:infinity_wellness/app/features/wallet/service/wallet_unlock_service.dart';
+import 'package:infinity_wellness/app/features/wallet/utility/loyalty_points_result.dart';
+import 'package:infinity_wellness/app/features/wallet/utility/loyalty_points_sdk.dart';
 
 class DefaultLoyaltyPointsSdk implements LoyaltyPointsSdk {
   const DefaultLoyaltyPointsSdk({

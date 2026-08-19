@@ -92,9 +92,9 @@ BEGIN
             VALUE "CompanyName", "com.thebuilderuni" "\0"
             VALUE "FileDescription", "theBuilderStudio" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "the_builder_studio" "\0"
+            VALUE "InternalName", "infinity_wellness" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.thebuilderuni. All rights reserved." "\0"
-            VALUE "OriginalFilename", "the_builder_studio.exe" "\0"
+            VALUE "OriginalFilename", "infinity_wellness.exe" "\0"
             VALUE "ProductName", "theBuilderStudio" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:the_builder_studio/app/core/base/base_controller.dart';
+import 'package:infinity_wellness/app/core/base/base_controller.dart';
 
 class PinnedMiniApp {
   const PinnedMiniApp({

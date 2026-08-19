@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import 'package:the_builder_studio/app/core/base/base_controller.dart';
+import 'package:infinity_wellness/app/core/base/base_controller.dart';
 
 class ProfileController extends BaseController {
   // User Account

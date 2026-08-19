@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:the_builder_studio/app/core/config/loyalty_system_config.dart';
+import 'package:infinity_wellness/app/core/config/loyalty_system_config.dart';
 import 'package:stellar_flutter_sdk/stellar_flutter_sdk.dart';
 
 class RecipientValidationService {

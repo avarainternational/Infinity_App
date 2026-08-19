@@ -3,11 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:the_builder_studio/app/constant/resources/app_string.dart';
-import 'package:the_builder_studio/app/core/base/base_view.dart';
-import 'package:the_builder_studio/app/features/wallet/controller/wallet_controller.dart';
-import 'package:the_builder_studio/app/features/wallet/utility/wallet_ui_metrics.dart';
-import 'package:the_builder_studio/app/widget/section_card.dart';
+import 'package:infinity_wellness/app/constant/resources/app_string.dart';
+import 'package:infinity_wellness/app/core/base/base_view.dart';
+import 'package:infinity_wellness/app/features/wallet/controller/wallet_controller.dart';
+import 'package:infinity_wellness/app/features/wallet/utility/wallet_ui_metrics.dart';
+import 'package:infinity_wellness/app/widget/section_card.dart';
 
 class WalletSendScanScreen extends BaseView<WalletController> {
   const WalletSendScanScreen({super.key});

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:the_builder_studio/app/constant/resources/app_colors.dart';
-import 'package:the_builder_studio/app/constant/resources/app_string.dart';
-import 'package:the_builder_studio/app/core/base/base_view.dart';
-import 'package:the_builder_studio/app/features/wallet/controller/wallet_controller.dart';
-import 'package:the_builder_studio/app/features/wallet/utility/wallet_ui_metrics.dart';
+import 'package:infinity_wellness/app/constant/resources/app_colors.dart';
+import 'package:infinity_wellness/app/constant/resources/app_string.dart';
+import 'package:infinity_wellness/app/core/base/base_view.dart';
+import 'package:infinity_wellness/app/features/wallet/controller/wallet_controller.dart';
+import 'package:infinity_wellness/app/features/wallet/utility/wallet_ui_metrics.dart';
 
 class WalletScreen extends BaseView<WalletController> {
   const WalletScreen({super.key});

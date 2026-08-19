@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:the_builder_studio/app/constant/resources/app_colors.dart';
-import 'package:the_builder_studio/app/core/base/base_view.dart';
-import 'package:the_builder_studio/app/features/home/controller/home_controller.dart';
-import 'package:the_builder_studio/app/widget/app_header.dart';
-import 'package:the_builder_studio/app/widget/section_card.dart';
+import 'package:infinity_wellness/app/constant/resources/app_colors.dart';
+import 'package:infinity_wellness/app/core/base/base_view.dart';
+import 'package:infinity_wellness/app/features/home/controller/home_controller.dart';
+import 'package:infinity_wellness/app/widget/app_header.dart';
+import 'package:infinity_wellness/app/widget/section_card.dart';
 
 class HomeScreen extends BaseView<HomeController> {
   const HomeScreen({super.key});

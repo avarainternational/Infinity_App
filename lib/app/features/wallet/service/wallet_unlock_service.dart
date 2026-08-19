@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter/widgets.dart';
-import 'package:the_builder_studio/app/features/wallet/model/encrypted_wallet_secret.dart';
+import 'package:infinity_wellness/app/features/wallet/model/encrypted_wallet_secret.dart';
 
 class WalletUnlockService with WidgetsBindingObserver {
   WalletUnlockService();

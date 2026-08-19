@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import 'package:the_builder_studio/app/features/feed/controller/feed_controller.dart';
+import 'package:infinity_wellness/app/features/feed/controller/feed_controller.dart';
 
 class FeedBinding extends Bindings {
   @override

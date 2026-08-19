@@ -83,7 +83,7 @@ Core design resources live in `lib/app/constant/resources/`. Android launcher ic
 | Setting | Value |
 | --- | --- |
 | Product name | `theBuilderStudio` |
-| Dart package | `the_builder_studio` |
+| Dart package | `infinity_wellness` |
 | Android application ID | `com.thebuilderuni.thebuilderstudio` |
 | Version | `1.0.0+1` |
 | Primary branch | `main` |

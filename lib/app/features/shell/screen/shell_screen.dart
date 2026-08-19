@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:the_builder_studio/app/core/base/base_view.dart';
-import 'package:the_builder_studio/app/features/feed/screen/feed_screen.dart';
-import 'package:the_builder_studio/app/features/home/screen/home_screen.dart';
-import 'package:the_builder_studio/app/features/mini_app_store/screen/mini_app_store_screen.dart';
-import 'package:the_builder_studio/app/features/profile/screen/profile_screen.dart';
-import 'package:the_builder_studio/app/features/shell/controller/shell_controller.dart';
-import 'package:the_builder_studio/app/features/wallet/screen/wallet_screen.dart';
+import 'package:infinity_wellness/app/core/base/base_view.dart';
+import 'package:infinity_wellness/app/features/feed/screen/feed_screen.dart';
+import 'package:infinity_wellness/app/features/home/screen/home_screen.dart';
+import 'package:infinity_wellness/app/features/mini_app_store/screen/mini_app_store_screen.dart';
+import 'package:infinity_wellness/app/features/profile/screen/profile_screen.dart';
+import 'package:infinity_wellness/app/features/shell/controller/shell_controller.dart';
+import 'package:infinity_wellness/app/features/wallet/screen/wallet_screen.dart';
 
 class ShellScreen extends BaseView<ShellController> {
   const ShellScreen({super.key});

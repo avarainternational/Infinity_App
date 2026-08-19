@@ -1,4 +1,4 @@
-import 'package:the_builder_studio/app/features/wallet/utility/loyalty_points_result.dart';
+import 'package:infinity_wellness/app/features/wallet/utility/loyalty_points_result.dart';
 
 abstract interface class LoyaltyPointsSdk {
   Future<LoyaltyBalanceResult> checkBalance();

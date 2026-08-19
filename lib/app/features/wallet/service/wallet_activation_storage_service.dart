@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:the_builder_studio/app/features/wallet/model/customer_wallet_access.dart';
-import 'package:the_builder_studio/app/features/wallet/model/encrypted_wallet_secret.dart';
+import 'package:infinity_wellness/app/features/wallet/model/customer_wallet_access.dart';
+import 'package:infinity_wellness/app/features/wallet/model/encrypted_wallet_secret.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class WalletActivationStorageService {
