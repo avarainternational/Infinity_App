@@ -5,9 +5,15 @@ class AppTheme {
   AppTheme._();
 
   static ThemeData get lightTheme {
+    final baseTextTheme = ThemeData.light().textTheme.apply(
+      fontFamily: 'Poppins',
+      bodyColor: AppColors.textPrimary,
+      displayColor: AppColors.textPrimary,
+    );
+
     return ThemeData(
       useMaterial3: true,
-      fontFamily: 'Inter',
+      fontFamily: 'Poppins',
       scaffoldBackgroundColor: AppColors.background,
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.violet,
@@ -36,7 +42,10 @@ class AppTheme {
           foregroundColor: AppColors.surface,
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
           shape: const StadiumBorder(),
-          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -45,7 +54,10 @@ class AppTheme {
           side: const BorderSide(color: AppColors.border),
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
           shape: const StadiumBorder(),
-          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -55,7 +67,10 @@ class AppTheme {
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
           shape: const StadiumBorder(),
-          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       chipTheme: ChipThemeData(
@@ -63,6 +78,7 @@ class AppTheme {
         side: const BorderSide(color: AppColors.border),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
         labelStyle: const TextStyle(
+          fontFamily: 'Poppins',
           color: AppColors.violet,
           fontWeight: FontWeight.w600,
         ),
@@ -73,7 +89,11 @@ class AppTheme {
         elevation: 2,
         shadowColor: Color(0x1A231448),
         labelTextStyle: WidgetStatePropertyAll(
-          TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -96,24 +116,30 @@ class AppTheme {
           borderSide: const BorderSide(color: AppColors.violet, width: 1.5),
         ),
       ),
-      textTheme: const TextTheme(
-        headlineMedium: TextStyle(
+      textTheme: baseTextTheme.copyWith(
+        headlineMedium: baseTextTheme.headlineMedium?.copyWith(
           fontSize: 28,
           fontWeight: FontWeight.w800,
           color: AppColors.textPrimary,
         ),
-        titleLarge: TextStyle(
+        titleLarge: baseTextTheme.titleLarge?.copyWith(
           fontSize: 20,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
         ),
-        titleMedium: TextStyle(
+        titleMedium: baseTextTheme.titleMedium?.copyWith(
           fontSize: 16,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
         ),
-        bodyLarge: TextStyle(fontSize: 16, color: AppColors.textPrimary),
-        bodyMedium: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+        bodyLarge: baseTextTheme.bodyLarge?.copyWith(
+          fontSize: 16,
+          color: AppColors.textPrimary,
+        ),
+        bodyMedium: baseTextTheme.bodyMedium?.copyWith(
+          fontSize: 14,
+          color: AppColors.textSecondary,
+        ),
       ),
     );
   }

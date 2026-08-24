@@ -22,13 +22,13 @@ Last synchronized: 2026-08-19
 ## Roadmap & Next Phases
 
 ### Phase 1: Super App Native Shell Architecture
-- [ ] Restructure feature modules (`features/home`, `features/feed`, `features/mini_app_store`, `features/wallet`, `features/profile`).
-- [ ] Implement 5-tab Super App bottom navigation.
-- [ ] Build **Home Dashboard** with daily wellness snapshot, streak counter, and mini-app quick-launch widget grid.
-- [ ] Build **Feed Screen** with ecosystem announcements and curated health discovery.
-- [ ] Build **Mini-App Store Screen** with module directory and pin/launch actions.
-- [ ] Build **Profile Screen** with health metrics inputs (weight, height, activity level).
-- [ ] Build **Wallet Screen** with Wellness Points balance and streak perks overview.
+- [x] Restructure feature modules (`features/home`, `features/feed`, `features/mini_app_store`, `features/wallet`, `features/profile`).
+- [x] Implement 5-tab Super App bottom navigation with liquid glass styling.
+- [x] Build **Home Dashboard** with daily wellness snapshot, streak counter, and mini-app quick-launch widget grid.
+- [x] Build **Feed Screen** with unified Infinity Wellness UI, ecosystem challenges, verified insights & myths.
+- [x] Build **Mini-App Store Screen** with module directory, category filter pills, and pin/launch actions.
+- [x] Build **Profile Screen** with health metrics cards (weight, height, activity level) and partner synergy status.
+- [x] Build **Wallet Screen** with Wellness Points balance, streak perks banner, and receive/transfer hub.
 
 ### Phase 2: Mini-App 1 — Medical News & Myth-Busting Feed
 - [ ] Create `features/mini_apps/medical_news/` module.

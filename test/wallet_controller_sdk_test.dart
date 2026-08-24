@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:infinity_wellness/app/core/config/loyalty_system_config.dart';
+import 'package:infinity_wellness/app/features/rewards_shop/controller/rewards_shop_controller.dart';
 import 'package:infinity_wellness/app/features/wallet/controller/wallet_controller.dart';
 import 'package:infinity_wellness/app/features/wallet/model/customer_wallet_access.dart';
 import 'package:infinity_wellness/app/features/wallet/model/wallet_transaction_history_model.dart';
@@ -62,6 +63,55 @@ void main() {
     expect(historyService.records.single.errorMessage, failure.message);
 
     controller.onClose();
+  });
+
+  test('Rewards Shop provides catalog items and supports category filtering', () {
+    final sdk = _FakeLoyaltyPointsSdk();
+    final controller = _buildController(sdk);
+
+    expect(controller.shopItems.length, greaterThanOrEqualTo(4));
+    expect(controller.selectedShopCategory.value, 'All');
+    expect(controller.filteredShopItems.length, equals(controller.shopItems.length));
+
+    controller.selectShopCategory('Gear');
+    expect(controller.filteredShopItems.every((item) => item.category == 'Gear'), isTrue);
+
+    controller.onClose();
+  });
+
+  test('redeemRewardItem deducts points when user has sufficient balance', () {
+    final sdk = _FakeLoyaltyPointsSdk();
+    final controller = _buildController(sdk);
+    controller.currentBalance.value = '500';
+
+    final item = controller.shopItems.firstWhere((i) => i.pointsCost == 300);
+    controller.redeemRewardItem(item);
+
+    expect(controller.currentBalance.value, '200');
+
+    controller.onClose();
+  });
+
+  test('RewardsShopController syncs points with WalletController and filters items', () {
+    final sdk = _FakeLoyaltyPointsSdk();
+    final walletController = _buildController(sdk);
+    walletController.currentBalance.value = '900';
+    Get.put<WalletController>(walletController);
+
+    final shopController = RewardsShopController();
+    expect(shopController.currentPoints, '900');
+    expect(shopController.filteredShopItems, isNotEmpty);
+
+    shopController.selectCategory('Nutrition');
+    expect(shopController.filteredShopItems.every((i) => i.category == 'Nutrition'), isTrue);
+
+    final item = shopController.shopItems.firstWhere((i) => i.id == 'item-drops');
+    shopController.redeemItem(item);
+
+    expect(walletController.currentBalance.value, '600');
+    expect(shopController.currentPoints, '600');
+
+    walletController.onClose();
   });
 }
 

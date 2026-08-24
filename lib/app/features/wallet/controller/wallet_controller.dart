@@ -17,6 +17,30 @@ import 'package:infinity_wellness/app/features/wallet/utility/loyalty_points_sdk
 
 enum WalletState { loading, configMissing, ready, activated, error }
 
+class RewardShopItem {
+  const RewardShopItem({
+    required this.id,
+    required this.title,
+    required this.category,
+    required this.description,
+    required this.pointsCost,
+    required this.icon,
+    required this.badge,
+    required this.gradient,
+    this.originalPriceString,
+  });
+
+  final String id;
+  final String title;
+  final String category;
+  final String description;
+  final int pointsCost;
+  final IconData icon;
+  final String badge;
+  final List<Color> gradient;
+  final String? originalPriceString;
+}
+
 class WalletController extends BaseController {
   WalletController({
     CustomerAccessImportService? importService,
@@ -26,6 +50,7 @@ class WalletController extends BaseController {
     WalletTransactionHistoryService? historyService,
     LoyaltyPointsSdk? loyaltyPointsSdk,
     bool enableSnackbars = true,
+    this.autoLoadConfig = true,
   }) : _importService =
            importService ?? Get.find<CustomerAccessImportService>(),
        _storageService =
@@ -37,6 +62,8 @@ class WalletController extends BaseController {
            historyService ?? Get.find<WalletTransactionHistoryService>(),
        _loyaltyPointsSdk = loyaltyPointsSdk ?? Get.find<LoyaltyPointsSdk>(),
        _enableSnackbars = enableSnackbars;
+
+  final bool autoLoadConfig;
 
   final CustomerAccessImportService _importService;
   final WalletActivationStorageService _storageService;
@@ -62,6 +89,132 @@ class WalletController extends BaseController {
   final TextEditingController recipientController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
 
+  // ---------------------------------------------------------------------------
+  // Rewards Shop Catalog & Filtering State
+  // ---------------------------------------------------------------------------
+  final selectedShopCategory = 'All'.obs;
+  final shopCategories = const [
+    'All',
+    'Gear',
+    'Nutrition',
+    'Power-ups',
+    'Vouchers',
+  ];
+
+  void selectShopCategory(String category) {
+    selectedShopCategory.value = category;
+  }
+
+  final shopItems = const <RewardShopItem>[
+    RewardShopItem(
+      id: 'item-bottle',
+      title: 'Infinity PureFlow™ UV-C Bottle',
+      category: 'Gear',
+      description:
+          'Self-cleaning 750ml smart bottle with UV-C purification & 24h temp retention.',
+      pointsCost: 850,
+      icon: Icons.local_drink_rounded,
+      badge: 'POPULAR',
+      gradient: [Color(0xFF0099FF), Color(0xFF0055D4)],
+      originalPriceString: '\$45 Value',
+    ),
+    RewardShopItem(
+      id: 'item-drops',
+      title: 'HydroMax+ Electrolyte Drops',
+      category: 'Nutrition',
+      description:
+          'Sugar-free cellular hydration drops (60ml bottle, 60 servings).',
+      pointsCost: 300,
+      icon: Icons.bolt_rounded,
+      badge: 'BESTSELLER',
+      gradient: [Color(0xFF0D9488), Color(0xFF047857)],
+      originalPriceString: '\$18 Value',
+    ),
+    RewardShopItem(
+      id: 'item-shield',
+      title: 'Synergy Streak Freeze Shield',
+      category: 'Power-ups',
+      description:
+          'Protects your 1-on-1 partner synergy streak if either misses 1 day.',
+      pointsCost: 150,
+      icon: Icons.shield_rounded,
+      badge: 'PERK',
+      gradient: [Color(0xFFFF6D00), Color(0xFFE64A19)],
+      originalPriceString: 'Power-up',
+    ),
+    RewardShopItem(
+      id: 'item-voucher-20',
+      title: '20% Off Infinity Store Voucher',
+      category: 'Vouchers',
+      description:
+          'Redeemable on all official Infinity Water filters, tumblers, and apparel.',
+      pointsCost: 200,
+      icon: Icons.confirmation_number_rounded,
+      badge: 'DISCOUNT',
+      gradient: [Color(0xFF7C3AED), Color(0xFF4338CA)],
+      originalPriceString: '20% OFF',
+    ),
+    RewardShopItem(
+      id: 'item-theme',
+      title: 'Cyber Teal Neon UI Theme',
+      category: 'Customization',
+      description:
+          'Exclusive animated cyber gauge and neon glow for your wellness companion.',
+      pointsCost: 100,
+      icon: Icons.palette_rounded,
+      badge: 'EXCLUSIVE',
+      gradient: [Color(0xFF00B4DB), Color(0xFF0083B0)],
+      originalPriceString: 'Digital Skin',
+    ),
+  ];
+
+  List<RewardShopItem> get filteredShopItems {
+    final cat = selectedShopCategory.value;
+    if (cat == 'All') return shopItems;
+    return shopItems.where((item) => item.category == cat).toList();
+  }
+
+  void redeemRewardItem(RewardShopItem item) {
+    final balanceVal = double.tryParse(currentBalance.value) ?? 0.0;
+    if (balanceVal < item.pointsCost) {
+      final needed = (item.pointsCost - balanceVal).toInt();
+      if (_enableSnackbars) {
+        Get.snackbar(
+          'Insufficient Points',
+          'You need $needed more points to redeem ${item.title}. Keep hydrating and completing streaks!',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.white,
+          colorText: const Color(0xFF1E293B),
+          icon:
+              const Icon(Icons.info_outline_rounded, color: Color(0xFFFF9800)),
+          margin: const EdgeInsets.all(16),
+          borderRadius: 16,
+          duration: const Duration(seconds: 4),
+        );
+      }
+      return;
+    }
+
+    // Deduct points
+    final newBalance =
+        (balanceVal - item.pointsCost).clamp(0.0, double.infinity);
+    currentBalance.value = newBalance.toStringAsFixed(0);
+
+    if (_enableSnackbars) {
+      Get.snackbar(
+        'Redemption Successful! 🎉',
+        'You redeemed ${item.title}! Use code INF-${item.id.toUpperCase()}-${DateTime.now().millisecondsSinceEpoch % 10000} at checkout.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFF0F172A),
+        colorText: Colors.white,
+        icon: const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981)),
+        margin: const EdgeInsets.all(16),
+        borderRadius: 16,
+        duration: const Duration(seconds: 5),
+      );
+    }
+  }
+
   String get merchantName =>
       config.value?.merchantName ?? AppString.walletTitle;
 
@@ -81,7 +234,9 @@ class WalletController extends BaseController {
   @override
   void onInit() {
     super.onInit();
-    loadConfig();
+    if (autoLoadConfig) {
+      loadConfig();
+    }
   }
 
   Future<void> loadConfig() async {
@@ -225,8 +380,27 @@ class WalletController extends BaseController {
     showMessage(AppString.walletRecipientCaptured);
     await validateRecipient();
     if (isRecipientValid.value) {
-      Get.offNamed(Routes.walletSend);
+      if (Get.currentRoute == Routes.walletSendScan) {
+        Get.offNamed(Routes.walletSend);
+      } else {
+        Get.toNamed(Routes.walletSend);
+      }
     }
+  }
+
+  Future<void> pasteRecipientFromClipboard() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text?.trim() ?? '';
+    if (text.isEmpty) {
+      showMessage('Clipboard is empty.');
+      return;
+    }
+    final normalized = normalizeWalletPublicKey(text);
+    if (normalized == null) {
+      showMessage(AppString.walletInvalidQr);
+      return;
+    }
+    await applyScannedRecipient(normalized);
   }
 
   String? normalizeWalletPublicKey(String rawValue) {
@@ -299,7 +473,7 @@ class WalletController extends BaseController {
       return;
     }
     _resetSendState();
-    Get.toNamed(Routes.walletSendScan);
+    rewardsMode.value = 1;
   }
 
   void openReceive() => Get.toNamed(Routes.walletReceive);

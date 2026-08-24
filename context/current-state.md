@@ -29,8 +29,9 @@ The repository is structured to migrate from the initial monolithic prototype sh
 ## Transition Status
 
 1. **Context & PRD Alignment**: Completed context files alignment (`AGENTS.md`, `project-overview.md`, `current-state.md`, `architecture.md`, `code-standards.md`, `ui-context.md`, `progress-tracker.md`, `decision-log.md`, `ai-workflow-rules.md`).
-2. **UI & Navigation Migration**: Evolving bottom navigation from 3 tabs to the 5-tab Super App shell (Home, Feed, Mini-App Store, Wallet, Profile).
-3. **Domain Logic & Data Layer**: Structuring typed services and repositories for Supabase Auth, PostgreSQL models, and Realtime channels.
+2. **UI & Navigation Migration**: Established the 5-tab Super App shell (Home, Feed, Mini-App Store, Wallet, Profile) as default initial route (`Routes.shell`).
+3. **Authentication & Supabase**: Integrated `supabase_flutter` with Google OAuth sign-in, deep-link callback filters (`io.supabase.infinitywellness://login-callback/`), reactive `AuthService`, branded `LoginScreen` (`Routes.login`), and profile integration with Sign Out (bypassed on launch to land directly on Home).
+4. **Domain Logic & Data Layer**: Structuring typed services and repositories for PostgreSQL models and Realtime channels.
 
 ## Implementation Guardrails
 

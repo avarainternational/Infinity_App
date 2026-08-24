@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:infinity_wellness/app/constant/resources/app_colors.dart';
 import 'package:infinity_wellness/app/core/base/base_controller.dart';
 
 abstract class BaseView<T extends BaseController> extends GetView<T> {
@@ -15,7 +16,7 @@ abstract class BaseView<T extends BaseController> extends GetView<T> {
           buildView(context),
           if (controller.isLoading.value)
             const ColoredBox(
-              color: Color(0x33000000),
+              color: AppColors.barrier,
               child: Center(child: CircularProgressIndicator()),
             ),
         ],

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:infinity_wellness/app/constant/routing/app_route.dart';
 import 'package:infinity_wellness/app/core/base/base_controller.dart';
+import 'package:infinity_wellness/app/features/feed/controller/feed_controller.dart';
+import 'package:infinity_wellness/app/features/shell/controller/shell_controller.dart';
 
 class MiniAppModule {
   MiniAppModule({
@@ -35,6 +38,7 @@ class MiniAppStoreController extends BaseController {
     'Health Literacy',
     'Vitality & Intake',
     'Mutual Accountability',
+    'Rewards & Gear',
   ];
 
   final miniApps = <MiniAppModule>[
@@ -89,11 +93,53 @@ class MiniAppStoreController extends BaseController {
       version: 'v1.0.0 (Phase 1)',
       isPinned: true,
     ),
+    MiniAppModule(
+      id: 'rewards-shop',
+      title: 'Wellness Rewards Shop',
+      subtitle: 'Redeem perks, gear & power-ups',
+      category: 'Rewards & Gear',
+      description:
+          'Explore the official catalog of Infinity PureFlow™ smart bottles, HydroMax+ electrolyte drops, synergy streak freeze shields, discount vouchers, and UI themes.',
+      icon: Icons.storefront_rounded,
+      colorHex: 0xFF0089D8,
+      features: [
+        'Official UV-C smart bottles & drops',
+        'Instant discount promo codes',
+        'Synergy streak freeze shields',
+      ],
+      version: 'v1.0.0 (Phase 1)',
+      isPinned: true,
+    ),
+    MiniAppModule(
+      id: 'achievements',
+      title: 'Achievements & Badges',
+      subtitle: 'Milestones, streaks & badges',
+      category: 'Rewards & Gear',
+      description:
+          'Track wellness badges, unlock streak achievements, and earn rewards points.',
+      icon: Icons.emoji_events_rounded,
+      colorHex: 0xFFF59E0B,
+      features: [
+        '6+ unique milestone badges',
+        'Earn extra wellness points',
+        'Synced mutual partner achievements',
+      ],
+      version: 'v1.0.0 (Phase 1)',
+      isPinned: true,
+    ),
   ].obs;
 
   List<MiniAppModule> get filteredMiniApps {
     if (selectedFilter.value == 'All') return miniApps;
     return miniApps.where((m) => m.category == selectedFilter.value).toList();
+  }
+
+  Map<String, List<MiniAppModule>> get groupedMiniApps {
+    final map = <String, List<MiniAppModule>>{};
+    for (final app in miniApps) {
+      map.putIfAbsent(app.category, () => []).add(app);
+    }
+    return map;
   }
 
   void togglePin(String id) {
@@ -110,11 +156,26 @@ class MiniAppStoreController extends BaseController {
   }
 
   void launchModule(MiniAppModule app) {
-    Get.snackbar(
-      'Opening ${app.title}',
-      'Launching module sandbox (${app.version})...',
-      snackPosition: SnackPosition.BOTTOM,
-      duration: const Duration(seconds: 2),
-    );
+    if (app.id == 'smart-hydration') {
+      Get.toNamed(Routes.hydrationDetail);
+    } else if (app.id == 'friend-synergy') {
+      Get.toNamed(Routes.partnerDetail);
+    } else if (app.id == 'rewards-shop') {
+      Get.toNamed(Routes.rewardsShop);
+    } else if (app.id == 'achievements') {
+      Get.toNamed(Routes.achievements);
+    } else if (app.id == 'medical-news') {
+      Get.find<ShellController>().selectTab(1);
+      if (Get.isRegistered<FeedController>()) {
+        Get.find<FeedController>().selectTab(SocialTab.feed);
+      }
+    } else {
+      Get.snackbar(
+        'Opening ${app.title}',
+        'Launching module sandbox (${app.version})...',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 2),
+      );
+    }
   }
 }

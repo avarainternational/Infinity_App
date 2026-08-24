@@ -1,0 +1,5 @@
+{
+  "supabaseUrl": "https://YOUR_PROJECT_REF.supabase.co",
+  "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "redirectUrl": "io.supabase.infinitywellness://login-callback/"
+}

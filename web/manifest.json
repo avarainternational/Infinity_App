@@ -1,11 +1,11 @@
 {
-    "name": "theBuilderStudio",
-    "short_name": "theBuilderStudio",
+    "name": "Infinity Wellness",
+    "short_name": "Infinity Wellness",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#F4F2F1",
-    "theme_color": "#5B20E5",
-    "description": "The Builder Uni mobile studio for Builders, Rewards, Apps, and work updates.",
+    "background_color": "#EFF0F2",
+    "theme_color": "#00A3FF",
+    "description": "Infinity Wellness (by Infinity Water) - Digital health, hydration & mutual synergy companion for youths.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

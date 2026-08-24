@@ -36,7 +36,7 @@ class AppString {
   static const String storeTitle = 'Mini-App Store';
   static const String storeSubtitle = 'Explore dedicated wellness modules';
   static const String storeFeaturedBadge = 'FEATURED MODULE';
-  static const String storeLaunchButton = 'Open Module';
+  static const String storeLaunchButton = 'Open Mini App';
   static const String storePinButton = 'Pin to Home';
   static const String storeUnpinButton = 'Unpin';
 

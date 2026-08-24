@@ -3,236 +3,217 @@ import 'package:get/get.dart';
 import 'package:infinity_wellness/app/constant/resources/app_colors.dart';
 import 'package:infinity_wellness/app/core/base/base_view.dart';
 import 'package:infinity_wellness/app/features/mini_app_store/controller/mini_app_store_controller.dart';
-import 'package:infinity_wellness/app/widget/app_header.dart';
-import 'package:infinity_wellness/app/widget/section_card.dart';
 
 class MiniAppStoreScreen extends BaseView<MiniAppStoreController> {
   const MiniAppStoreScreen({super.key});
 
   @override
   Widget buildView(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
-      children: [
-        const AppHeader(
-          title: 'Mini-App Store',
-          subtitle: 'Directory of dedicated wellness modules',
-        ),
-        const SizedBox(height: 18),
+    return Container(
+      color: Colors.white,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(18, 14, 18, 110),
+        children: [
+          // 1. Top Header: Title, Icon & Subtitle
+          _buildTopHeader(context),
+          const SizedBox(height: 24),
 
-        // Category Filter Chips
-        _buildFilters(),
-        const SizedBox(height: 18),
+          // 2. Vertical Category Sections (Icon + Caption Below)
+          Obx(() {
+            final grouped = controller.groupedMiniApps;
 
-        // Mini-App Directory
-        Obx(() {
-          final apps = controller.filteredMiniApps;
-          return Column(
-            children: apps.map((app) => _buildMiniAppCard(context, app)).toList(),
-          );
-        }),
-      ],
-    );
-  }
-
-  Widget _buildFilters() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Obx(
-        () => Row(
-          children: controller.filterCategories.map((category) {
-            final isSelected = controller.selectedFilter.value == category;
-            return Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: FilterChip(
-                label: Text(category),
-                selected: isSelected,
-                onSelected: (_) => controller.selectedFilter.value = category,
-                backgroundColor: AppColors.surface,
-                selectedColor: AppColors.primarySoft,
-                side: BorderSide(
-                  color: isSelected ? AppColors.primary : AppColors.border,
-                ),
-                labelStyle: TextStyle(
-                  color: isSelected ? AppColors.primary : AppColors.textPrimary,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  fontSize: 13,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: grouped.entries.map((entry) {
+                return _buildCategorySection(context, entry.key, entry.value);
+              }).toList(),
             );
-          }).toList(),
-        ),
+          }),
+        ],
       ),
     );
   }
 
-  Widget _buildMiniAppCard(BuildContext context, MiniAppModule app) {
+  // ---------------------------------------------------------------------------
+  // Top Header: Title, Icon & Subtitle
+  // ---------------------------------------------------------------------------
+  Widget _buildTopHeader(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: const BoxDecoration(
+                  color: AppColors.mintSoft,
+                  shape: BoxShape.circle,
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.grid_view_rounded,
+                    size: 28,
+                    color: AppColors.primaryVibrant,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Mini-App Store',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textDark,
+                        letterSpacing: -0.4,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Directory of dedicated wellness modules',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSubtitle,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Vertical Category Section
+  // ---------------------------------------------------------------------------
+  Widget _buildCategorySection(
+    BuildContext context,
+    String categoryName,
+    List<MiniAppModule> apps,
+  ) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: SectionCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top: App Icon, Title, Subtitle, Category
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Category Title Header
+          Padding(
+            padding: const EdgeInsets.only(left: 2, bottom: 14),
+            child: Row(
               children: [
                 Container(
-                  width: 48,
-                  height: 48,
+                  width: 4,
+                  height: 14,
                   decoration: BoxDecoration(
-                    color: Color(app.colorHex).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(
-                    app.icon,
-                    color: Color(app.colorHex),
-                    size: 26,
+                    color: AppColors.primaryVibrant,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              app.title,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.primarySoft,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              app.category,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        app.subtitle,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
+                const SizedBox(width: 8),
+                Text(
+                  categoryName,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textDark,
+                    letterSpacing: -0.2,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 14),
+          ),
 
-            // Description
-            Text(
-              app.description,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textSecondary,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 14),
+          // App Icons with Captions Below (No white container card)
+          Wrap(
+            spacing: 18,
+            runSpacing: 18,
+            children: apps
+                .map((app) => _buildMiniAppGridItem(context, app))
+                .toList(),
+          ),
+        ],
+      ),
+    );
+  }
 
-            // Features Checklist
+  // ---------------------------------------------------------------------------
+  // App Item: Icon + Caption Below
+  // ---------------------------------------------------------------------------
+  Widget _buildMiniAppGridItem(BuildContext context, MiniAppModule app) {
+    final moduleColor = Color(app.colorHex);
+
+    return GestureDetector(
+      onTap: () => controller.launchModule(app),
+      child: SizedBox(
+        width: 80,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Icon Squircle
             Container(
-              padding: const EdgeInsets.all(12),
+              width: 58,
+              height: 58,
               decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(12),
+                color: AppColors.iceBlueBgSoft,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: AppColors.iceBlueBorder,
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: app.features.map((feature) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 3),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.check_circle_rounded,
-                          size: 16,
-                          color: AppColors.primary,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            feature,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ),
-                      ],
+              child: Center(
+                child: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: moduleColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      app.icon,
+                      color: moduleColor,
+                      size: 23,
                     ),
-                  );
-                }).toList(),
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
 
-            // Action Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: () => controller.launchModule(app),
-                    icon: const Icon(Icons.launch_rounded, size: 16),
-                    label: const Text('Open Module'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Color(app.colorHex),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Obx(
-                  () => OutlinedButton.icon(
-                    onPressed: () => controller.togglePin(app.id),
-                    icon: Icon(
-                      app.isPinned.value
-                          ? Icons.bookmark_rounded
-                          : Icons.bookmark_border_rounded,
-                      size: 16,
-                    ),
-                    label: Text(app.isPinned.value ? 'Pinned' : 'Pin'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.textPrimary,
-                      side: const BorderSide(color: AppColors.border),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            // Caption Text Below Icon
+            Text(
+              app.title,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textDark,
+                height: 1.2,
+                letterSpacing: -0.2,
+              ),
             ),
           ],
         ),
@@ -240,3 +221,5 @@ class MiniAppStoreScreen extends BaseView<MiniAppStoreController> {
     );
   }
 }
+
+
