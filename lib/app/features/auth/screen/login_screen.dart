@@ -11,31 +11,42 @@ class LoginScreen extends BaseView<AuthController> {
   @override
   Widget buildView(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.white,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // App Brand Icon & Header
-                  _buildBrandHeader(),
-                  const SizedBox(height: 36),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 20),
 
-                  // Main Card with Features & Sign In Button
-                  _buildLoginCard(context),
-                  const SizedBox(height: 28),
+                      // 1. Top Logo + App Name + Underline
+                      _buildBrandHeader(),
 
-                  // Footer Note
-                  _buildFooterNote(),
-                ],
+                      const SizedBox(height: 36),
+
+                      // 2. Center Slogan (Myanmar Text)
+                      _buildCenterSlogan(),
+
+                      const SizedBox(height: 36),
+
+                      // 3. Footer: Google Login Button + Infinity Water signature
+                      _buildFooterSection(context),
+
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
@@ -43,230 +54,165 @@ class LoginScreen extends BaseView<AuthController> {
 
   Widget _buildBrandHeader() {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(22),
-          child: Image.asset(
-            AppImages.logo,
-            width: 84,
-            height: 84,
-            fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) => Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.primary, AppColors.violet],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.35),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
+        // App Logo from Assets
+        Container(
+          width: 120,
+          height: 120,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF0077B6).withValues(alpha: 0.25),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
               ),
-              child: const Center(
-                child: Icon(
-                  Icons.water_drop_rounded,
-                  color: AppColors.surface,
-                  size: 44,
-                ),
-              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: Image.asset(
+              AppImages.infinityWellnessLogo,
+              fit: BoxFit.contain,
             ),
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
+
+        // App Name
         const Text(
           'Infinity Wellness',
           textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: 28,
+            fontSize: 26,
             fontWeight: FontWeight.w900,
-            color: AppColors.textPrimary,
+            color: Color(0xFF0F172A),
             letterSpacing: -0.5,
           ),
         ),
-        const SizedBox(height: 8),
-        const Text(
-          'by Infinity Water',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: AppColors.primary,
-            letterSpacing: 0.5,
-          ),
-        ),
         const SizedBox(height: 6),
-        const Text(
-          'Your youth digital health & mutual synergy companion',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 13,
-            color: AppColors.textBody,
-            height: 1.3,
+
+        // Clean Horizontal Underline
+        Container(
+          width: 120,
+          height: 2.0,
+          decoration: BoxDecoration(
+            color: const Color(0xFF0F172A),
+            borderRadius: BorderRadius.circular(2),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildLoginCard(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.6)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+  Widget _buildCenterSlogan() {
+    return const Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'ချစ်ရသူတွေနဲ့',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 23,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF0F172A),
+            height: 1.4,
+            letterSpacing: 0.2,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            'Get Started',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-            ),
+        ),
+        SizedBox(height: 6),
+        Text(
+          'ဝေ မျှရင်းဂရုစိုက်လိုက်ပါ',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 23,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF0F172A),
+            height: 1.4,
+            letterSpacing: 0.2,
           ),
-          const SizedBox(height: 6),
-          const Text(
-            'Sign in to sync your hydration streaks and 1-on-1 synergy',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13,
-              color: AppColors.textBody,
-            ),
-          ),
-          const SizedBox(height: 22),
-
-          // Feature highlights
-          _buildFeatureRow(
-            icon: Icons.auto_awesome_rounded,
-            color: AppColors.primary,
-            title: 'Evidence-Based Literacy',
-            subtitle: 'Curated medical news and myth-busting',
-          ),
-          const SizedBox(height: 12),
-          _buildFeatureRow(
-            icon: Icons.water_rounded,
-            color: AppColors.primary,
-            title: 'Smart Hydration Goal',
-            subtitle: 'Dynamic calculations for your body & activity',
-          ),
-          const SizedBox(height: 12),
-          _buildFeatureRow(
-            icon: Icons.people_alt_rounded,
-            color: AppColors.violet,
-            title: '1-on-1 Synergy',
-            subtitle: 'Mutual live nudges with your best friend',
-          ),
-          const SizedBox(height: 26),
-
-          // Google OAuth Sign In Button
-          Obx(
-            () => SizedBox(
-              height: 52,
-              child: ElevatedButton(
-                onPressed: controller.isLoading.value
-                    ? null
-                    : () => controller.signInWithGoogle(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.surface,
-                  foregroundColor: AppColors.textPrimary,
-                  elevation: 1,
-                  shadowColor: Colors.black26,
-                  side: const BorderSide(color: AppColors.borderLight, width: 1.2),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                ),
-                child: controller.isLoading.value
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                        ),
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildGoogleLogo(),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'Continue with Google',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textSubtitle,
-                              letterSpacing: 0.1,
-                            ),
-                          ),
-                        ],
-                      ),
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _buildFeatureRow({
-    required IconData icon,
-    required Color color,
-    required String title,
-    required String subtitle,
-  }) {
-    return Row(
+  Widget _buildFooterSection(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(10),
+        // Primary Google OAuth Sign In Button
+        Obx(
+          () => SizedBox(
+            height: 54,
+            child: ElevatedButton(
+              onPressed: controller.isLoading.value ? null : () => controller.signInWithGoogle(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: AppColors.textDark,
+                elevation: 2,
+                shadowColor: Colors.black.withValues(alpha: 0.08),
+                side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+              ),
+              child: controller.isLoading.value
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                      ),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildGoogleLogo(),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Continue with Google',
+                          style: TextStyle(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0F172A),
+                            letterSpacing: 0.1,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
           ),
-          child: Icon(icon, color: color, size: 20),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
+        const SizedBox(height: 26),
+
+        // Footer Brand Signature
+        const Column(
+          children: [
+            Text(
+              'By Infinity Water',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF0F172A),
+                letterSpacing: -0.2,
               ),
-              Text(
-                subtitle,
-                style: const TextStyle(
-                  fontSize: 11.5,
-                  color: AppColors.textSlate,
-                ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              'ရေသန့်ထက်ပိုသောရေသန့်',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF64748B),
+                letterSpacing: 0.1,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ],
     );
@@ -279,31 +225,6 @@ class LoginScreen extends BaseView<AuthController> {
       child: CustomPaint(
         painter: _GoogleIconPainter(),
       ),
-    );
-  }
-
-  Widget _buildFooterNote() {
-    return const Column(
-      children: [
-        Text(
-          'Protected by Supabase PostgreSQL & Row Level Security',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textSlate,
-          ),
-        ),
-        SizedBox(height: 4),
-        Text(
-          'By continuing, you agree to Infinity Wellness terms & privacy standards.',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 10.5,
-            color: AppColors.textLight,
-          ),
-        ),
-      ],
     );
   }
 }
@@ -371,7 +292,7 @@ class _GoogleIconPainter extends CustomPainter {
     canvas.drawPath(bluePath, bluePaint);
 
     // Inner cutout
-    final innerPaint = Paint()..color = AppColors.surface;
+    final innerPaint = Paint()..color = Colors.white;
     canvas.drawCircle(center, radius * 0.58, innerPaint);
 
     // Right crossbar

@@ -102,3 +102,18 @@ Connect Supabase authentication to the app with **Google OAuth** as the exclusiv
 - Implemented `SupabaseService` and `AuthService` with reactive session streaming and state management.
 - Built a modern, branded `LoginScreen` with the "Continue with Google" button and informative fallback for development/explorer mode.
 - Integrated profile screen with reactive user session data and Sign Out confirmation.
+
+## 2026-09-02 — Adopt Option 1 (Shadcn) Wallet Design System
+
+### Decision
+Adopt the **Option 1 — Shadcn Wallet Design System** direction as the standard UI architecture across the Ecosystem Wallet.
+
+### Reason
+- Provides a clean, minimalist, high-contrast, professional mobile interface with clear typographic hierarchy (Plus Jakarta Sans & Inter).
+- Replaces heavy ambient gradients with a crisp slate canvas (`#F8FAFC`), pure white card surfaces (`#FFFFFF`), subtle 1px borders (`#E2E8F0`), and soft shadows.
+- Features prominent Royal Blue (`#2563EB`) points balances, high-contrast streak badges (`#16A34A`), smooth animated segmented control tabs, and integrated inline QR scanning.
+
+### Result
+- Added dedicated `WalletColors`, `WalletSpacing`, `WalletRadius`, `WalletShadows`, and `WalletTextStyles` design tokens in `wallet_ui_metrics.dart`.
+- Refactored `WalletScreen`, `SectionCard`, `WalletReceiveScreen`, `WalletSendScreen`, `WalletSendReviewScreen`, `WalletTransactionHistoryScreen`, and `WalletSendScanScreen` to strictly adhere to the Option 1 Shadcn design specifications.
+

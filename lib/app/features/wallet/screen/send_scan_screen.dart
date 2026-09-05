@@ -15,7 +15,24 @@ class WalletSendScanScreen extends BaseView<WalletController> {
   @override
   Widget buildView(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text(AppString.walletScanQrTitle)),
+      backgroundColor: WalletColors.background,
+      appBar: AppBar(
+        title: const Text(
+          AppString.walletScanQrTitle,
+          style: TextStyle(
+            color: WalletColors.textPrimary,
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
+        ),
+        backgroundColor: WalletColors.surface,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1, thickness: 1, color: WalletColors.border),
+        ),
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(WalletSpacing.lg),
@@ -158,30 +175,56 @@ class _QrScannerPanelState extends State<_QrScannerPanel>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(WalletRadius.md),
+            borderRadius: BorderRadius.circular(WalletRadius.lg),
             child: AspectRatio(
               aspectRatio: 1,
-              child: MobileScanner(
-                controller: _scannerController,
-                fit: BoxFit.cover,
-                useAppLifecycleState: false,
-                placeholderBuilder: (_) =>
-                    const Center(child: CircularProgressIndicator()),
-                errorBuilder: (_, _) => const _ScannerFallback(),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black87,
+                  borderRadius: BorderRadius.circular(WalletRadius.lg),
+                  border: Border.all(color: WalletColors.border),
+                ),
+                child: MobileScanner(
+                  controller: _scannerController,
+                  fit: BoxFit.cover,
+                  useAppLifecycleState: false,
+                  placeholderBuilder: (_) => const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(WalletColors.primary),
+                    ),
+                  ),
+                  errorBuilder: (_, _) => const _ScannerFallback(),
+                ),
               ),
             ),
           ),
-          const SizedBox(height: WalletSpacing.sm),
+          const SizedBox(height: WalletSpacing.md),
           Row(
             children: [
-              Expanded(child: Text(_status)),
+              Expanded(
+                child: Text(
+                  _status,
+                  style: WalletTextStyles.bodyMuted,
+                ),
+              ),
+              const SizedBox(width: WalletSpacing.sm),
               OutlinedButton.icon(
                 onPressed: () {
                   setState(() => _status = AppString.walletScannerOpening);
                   unawaited(_stopScanner().then((_) => _startScanner()));
                 },
-                icon: const Icon(Icons.qr_code_scanner_outlined),
-                label: const Text(AppString.walletScanAgain),
+                icon: const Icon(Icons.qr_code_scanner_outlined, size: 16),
+                label: const Text(
+                  AppString.walletScanAgain,
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: WalletColors.primary,
+                  side: const BorderSide(color: WalletColors.border),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(WalletRadius.md),
+                  ),
+                ),
               ),
             ],
           ),
@@ -204,14 +247,12 @@ class _ScannerFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return ColoredBox(
-      color: colorScheme.surfaceContainerHighest,
-      child: Center(
+    return Container(
+      color: Colors.black87,
+      child: const Center(
         child: Icon(
           Icons.camera_alt_outlined,
-          color: colorScheme.onSurfaceVariant,
+          color: Colors.white54,
           size: 40,
         ),
       ),

@@ -4,6 +4,7 @@ import 'package:infinity_wellness/app/constant/resources/app_colors.dart';
 import 'package:infinity_wellness/app/constant/routing/app_route.dart';
 import 'package:infinity_wellness/app/core/base/base_view.dart';
 import 'package:infinity_wellness/app/features/profile/controller/profile_controller.dart';
+import 'package:infinity_wellness/app/features/wallet/utility/wallet_ui_metrics.dart';
 
 class ProfileScreen extends BaseView<ProfileController> {
   const ProfileScreen({super.key});
@@ -11,39 +12,36 @@ class ProfileScreen extends BaseView<ProfileController> {
   @override
   Widget buildView(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: AppColors.ambientGradientColors,
+      color: WalletColors.background,
+      child: SafeArea(
+        bottom: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
+          children: [
+            // 1. Top Header: Title, Icon & Subtitle
+            _buildTopHeader(context),
+            const SizedBox(height: WalletSpacing.lg),
+
+            // 2. User Account Card
+            _buildUserAccountCard(context),
+            const SizedBox(height: WalletSpacing.md),
+
+            // 3. Achievements & Badges Card
+            _buildAchievementsCard(context),
+            const SizedBox(height: WalletSpacing.md),
+
+            // 4. Health Metrics & Smart Goal Calculator Card
+            _buildHealthMetricsCard(context),
+            const SizedBox(height: WalletSpacing.md),
+
+            // 5. 1-on-1 Synergy Partner Card
+            _buildPartnerCard(context),
+            const SizedBox(height: WalletSpacing.md),
+
+            // 6. Preferences & Settings Card
+            _buildSettingsCard(context),
+          ],
         ),
-      ),
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 14, 18, 110),
-        children: [
-          // 1. Top Header: Title, Icon & Subtitle
-          _buildTopHeader(context),
-          const SizedBox(height: 16),
-
-          // 2. User Account Card
-          _buildUserAccountCard(context),
-          const SizedBox(height: 16),
-
-          // 3. Achievements & Badges Card
-          _buildAchievementsCard(context),
-          const SizedBox(height: 16),
-
-          // 4. Health Metrics & Smart Goal Calculator Card
-          _buildHealthMetricsCard(context),
-          const SizedBox(height: 16),
-
-          // 5. 1-on-1 Synergy Partner Card
-          _buildPartnerCard(context),
-          const SizedBox(height: 16),
-
-          // 6. Preferences & Settings Card
-          _buildSettingsCard(context),
-        ],
       ),
     );
   }
@@ -60,21 +58,26 @@ class ProfileScreen extends BaseView<ProfileController> {
           child: Row(
             children: [
               Container(
-                width: 52,
-                height: 52,
-                decoration: const BoxDecoration(
-                  color: AppColors.mintSoft,
-                  shape: BoxShape.circle,
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: WalletColors.surface,
+                  borderRadius: BorderRadius.circular(WalletRadius.md),
+                  border: Border.all(
+                    color: WalletColors.primaryBorder,
+                    width: 1.2,
+                  ),
+                  boxShadow: WalletShadows.level1,
                 ),
                 child: const Center(
                   child: Icon(
                     Icons.person_rounded,
-                    size: 28,
-                    color: AppColors.primaryVibrant,
+                    size: 26,
+                    color: WalletColors.primary,
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: WalletSpacing.md),
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,21 +85,12 @@ class ProfileScreen extends BaseView<ProfileController> {
                   children: [
                     Text(
                       'My Profile',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textDark,
-                        letterSpacing: -0.4,
-                      ),
+                      style: WalletTextStyles.heading2,
                     ),
                     SizedBox(height: 2),
                     Text(
                       'Health metrics & ecosystem account',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSubtitle,
-                      ),
+                      style: WalletTextStyles.bodyMuted,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
@@ -114,17 +108,12 @@ class ProfileScreen extends BaseView<ProfileController> {
   // ---------------------------------------------------------------------------
   Widget _buildUserAccountCard(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        color: WalletColors.surface,
+        borderRadius: BorderRadius.circular(WalletRadius.xl),
+        border: Border.all(color: WalletColors.border, width: 1.0),
+        boxShadow: WalletShadows.level1,
       ),
       child: Row(
         children: [
@@ -132,7 +121,7 @@ class ProfileScreen extends BaseView<ProfileController> {
             final avatar = controller.avatarUrl.value;
             if (avatar.isNotEmpty) {
               return ClipRRect(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(WalletRadius.lg),
                 child: Image.network(
                   avatar,
                   width: 56,
@@ -144,7 +133,7 @@ class ProfileScreen extends BaseView<ProfileController> {
             }
             return _buildInitialsAvatar();
           }),
-          const SizedBox(width: 16),
+          const SizedBox(width: WalletSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,42 +141,69 @@ class ProfileScreen extends BaseView<ProfileController> {
                 Obx(
                   () => Text(
                     controller.userName.value,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textDark,
-                    ),
+                    style: WalletTextStyles.heading3,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Obx(
                   () => Text(
                     controller.userEmail.value,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textSlate,
-                    ),
+                    style: WalletTextStyles.bodyMuted,
                   ),
                 ),
                 const SizedBox(height: 6),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.cyanBadgeBg,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Obx(
-                    () => Text(
-                      controller.memberTier.value,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primaryDarkBlue,
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: WalletColors.primaryLight,
+                        borderRadius: BorderRadius.circular(WalletRadius.xs),
+                        border: Border.all(color: WalletColors.primaryBorder, width: 0.8),
+                      ),
+                      child: Obx(
+                        () => Text(
+                          controller.memberTier.value,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: WalletColors.primary,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    Obx(
+                      () => Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: WalletColors.shopBg,
+                          borderRadius: BorderRadius.circular(WalletRadius.xs),
+                          border: Border.all(color: WalletColors.shopBorder, width: 0.8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.qr_code_rounded,
+                              size: 12,
+                              color: WalletColors.shopIcon,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Code: ${controller.inviteCode.value}',
+                              style: const TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w800,
+                                color: WalletColors.shopText,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -198,23 +214,18 @@ class ProfileScreen extends BaseView<ProfileController> {
   }
 
   // ---------------------------------------------------------------------------
-  // Achievements Showcase Card (Connecting to Full Achievements Mini-App)
+  // Achievements Showcase Card
   // ---------------------------------------------------------------------------
   Widget _buildAchievementsCard(BuildContext context) {
     return GestureDetector(
       onTap: () => Get.toNamed(Routes.achievements),
       child: Container(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(26),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 18,
-              offset: const Offset(0, 6),
-            ),
-          ],
+          color: WalletColors.surface,
+          borderRadius: BorderRadius.circular(WalletRadius.xl),
+          border: Border.all(color: WalletColors.border, width: 1.0),
+          boxShadow: WalletShadows.level1,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,41 +240,33 @@ class ProfileScreen extends BaseView<ProfileController> {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: AppColors.cyanBadgeBg,
-                          borderRadius: BorderRadius.circular(8),
+                          color: WalletColors.warningBg,
+                          borderRadius: BorderRadius.circular(WalletRadius.xs),
                         ),
                         child: const Icon(
                           Icons.emoji_events_rounded,
-                          color: AppColors.primaryDarkBlue,
+                          color: WalletColors.warning,
                           size: 18,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: WalletSpacing.sm),
                       const Expanded(
                         child: Text(
                           'Achievements',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textDark,
-                          ),
+                          style: WalletTextStyles.heading3,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: WalletSpacing.sm),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: AppColors.cyanPillBg,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: AppColors.cyanPillBorder,
-                      width: 1,
-                    ),
+                    color: WalletColors.surfaceMuted,
+                    borderRadius: BorderRadius.circular(WalletRadius.md),
+                    border: Border.all(color: WalletColors.border, width: 1),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
@@ -273,23 +276,23 @@ class ProfileScreen extends BaseView<ProfileController> {
                         style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textSubtitle,
+                          color: WalletColors.textSecondary,
                         ),
                       ),
                       SizedBox(width: 3),
                       Icon(
                         Icons.arrow_forward_rounded,
                         size: 13,
-                        color: AppColors.textSubtitle,
+                        color: WalletColors.textSecondary,
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: WalletSpacing.md),
 
-            // Middle: Three Displayed Achievements (Only Icons)
+            // Middle: Three Displayed Achievements
             Obx(() {
               final displayed = controller.achievements.take(3).toList();
 
@@ -316,30 +319,20 @@ class ProfileScreen extends BaseView<ProfileController> {
       decoration: BoxDecoration(
         color: achievement.isUnlocked
             ? achievement.color.withValues(alpha: 0.12)
-            : AppColors.iceBlueBg,
-        borderRadius: BorderRadius.circular(18),
+            : WalletColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(WalletRadius.lg),
         border: Border.all(
           color: achievement.isUnlocked
               ? achievement.color.withValues(alpha: 0.35)
-              : AppColors.iceBlueBorder,
+              : WalletColors.border,
           width: 1.2,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: achievement.isUnlocked
-                ? achievement.color.withValues(alpha: 0.18)
-                : Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        boxShadow: WalletShadows.level1,
       ),
       child: Center(
         child: Icon(
           achievement.icon,
-          color: achievement.isUnlocked
-              ? achievement.color
-              : AppColors.textMuted,
+          color: achievement.isUnlocked ? achievement.color : WalletColors.textLight,
           size: 28,
         ),
       ),
@@ -351,17 +344,12 @@ class ProfileScreen extends BaseView<ProfileController> {
   // ---------------------------------------------------------------------------
   Widget _buildHealthMetricsCard(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        color: WalletColors.surface,
+        borderRadius: BorderRadius.circular(WalletRadius.xl),
+        border: Border.all(color: WalletColors.border, width: 1.0),
+        boxShadow: WalletShadows.level1,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -375,50 +363,46 @@ class ProfileScreen extends BaseView<ProfileController> {
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: AppColors.cyanBadgeBg,
-                        borderRadius: BorderRadius.circular(8),
+                        color: WalletColors.primaryLight,
+                        borderRadius: BorderRadius.circular(WalletRadius.xs),
                       ),
                       child: const Icon(
                         Icons.monitor_weight_rounded,
-                        color: AppColors.primary,
+                        color: WalletColors.primary,
                         size: 18,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: WalletSpacing.sm),
                     const Expanded(
                       child: Text(
                         'Health Metrics',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textDark,
-                        ),
+                        style: WalletTextStyles.heading3,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: WalletSpacing.sm),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppColors.purpleSoft,
-                  borderRadius: BorderRadius.circular(8),
+                  color: WalletColors.shopBg,
+                  borderRadius: BorderRadius.circular(WalletRadius.xs),
+                  border: Border.all(color: WalletColors.shopBorder, width: 0.8),
                 ),
                 child: const Text(
                   'Smart Goal Engine',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.purpleAccent,
+                    color: WalletColors.shopText,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: WalletSpacing.md),
 
           // Metrics Row (Weight / Height)
           Row(
@@ -427,20 +411,16 @@ class ProfileScreen extends BaseView<ProfileController> {
                 child: Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: AppColors.iceBlueBg,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.iceBlueBorder),
+                    color: WalletColors.surfaceMuted,
+                    borderRadius: BorderRadius.circular(WalletRadius.lg),
+                    border: Border.all(color: WalletColors.border),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         'Weight',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSlate,
-                        ),
+                        style: WalletTextStyles.label,
                       ),
                       const SizedBox(height: 4),
                       Obx(
@@ -449,7 +429,7 @@ class ProfileScreen extends BaseView<ProfileController> {
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w900,
-                            color: AppColors.textDark,
+                            color: WalletColors.textPrimary,
                           ),
                         ),
                       ),
@@ -457,25 +437,21 @@ class ProfileScreen extends BaseView<ProfileController> {
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: WalletSpacing.sm),
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: AppColors.iceBlueBg,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.iceBlueBorder),
+                    color: WalletColors.surfaceMuted,
+                    borderRadius: BorderRadius.circular(WalletRadius.lg),
+                    border: Border.all(color: WalletColors.border),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         'Height',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSlate,
-                        ),
+                        style: WalletTextStyles.label,
                       ),
                       const SizedBox(height: 4),
                       Obx(
@@ -484,7 +460,7 @@ class ProfileScreen extends BaseView<ProfileController> {
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w900,
-                            color: AppColors.textDark,
+                            color: WalletColors.textPrimary,
                           ),
                         ),
                       ),
@@ -494,15 +470,15 @@ class ProfileScreen extends BaseView<ProfileController> {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: WalletSpacing.sm),
 
           // Activity Level
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.iceBlueBg,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.iceBlueBorder),
+              color: WalletColors.surfaceMuted,
+              borderRadius: BorderRadius.circular(WalletRadius.lg),
+              border: Border.all(color: WalletColors.border),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -512,23 +488,23 @@ class ProfileScreen extends BaseView<ProfileController> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textSlate,
+                    color: WalletColors.textSecondary,
                   ),
                 ),
                 Obx(
                   () => Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.cyanBadgeBg,
-                      borderRadius: BorderRadius.circular(10),
+                      color: WalletColors.primaryLight,
+                      borderRadius: BorderRadius.circular(WalletRadius.xs),
+                      border: Border.all(color: WalletColors.primaryBorder, width: 0.8),
                     ),
                     child: Text(
                       controller.activityLevel.value,
                       style: const TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.primaryDarkBlue,
+                        color: WalletColors.primary,
                       ),
                     ),
                   ),
@@ -536,19 +512,21 @@ class ProfileScreen extends BaseView<ProfileController> {
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: WalletSpacing.md),
 
           // Calculated Goal Banner
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: AppColors.bannerBlueGradient,
+                colors: [WalletColors.primary, Color(0xFF0284C7)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(WalletRadius.xl),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primaryDeep.withValues(alpha: 0.2),
+                  color: WalletColors.primary.withValues(alpha: 0.25),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -559,26 +537,26 @@ class ProfileScreen extends BaseView<ProfileController> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.surface.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(WalletRadius.md),
                   ),
                   child: const Icon(
                     Icons.water_drop_rounded,
-                    color: AppColors.surface,
+                    color: Colors.white,
                     size: 26,
                   ),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: WalletSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Calculated Daily Water Goal',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.ambientGradientMiddle,
+                          color: Colors.white.withValues(alpha: 0.85),
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -588,7 +566,7 @@ class ProfileScreen extends BaseView<ProfileController> {
                           style: const TextStyle(
                             fontSize: 19,
                             fontWeight: FontWeight.w900,
-                            color: AppColors.surface,
+                            color: Colors.white,
                             letterSpacing: -0.3,
                           ),
                         ),
@@ -609,17 +587,12 @@ class ProfileScreen extends BaseView<ProfileController> {
   // ---------------------------------------------------------------------------
   Widget _buildPartnerCard(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        color: WalletColors.surface,
+        borderRadius: BorderRadius.circular(WalletRadius.xl),
+        border: Border.all(color: WalletColors.border, width: 1.0),
+        boxShadow: WalletShadows.level1,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -632,66 +605,63 @@ class ProfileScreen extends BaseView<ProfileController> {
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: AppColors.cyanBadgeBg,
-                      borderRadius: BorderRadius.circular(8),
+                      color: WalletColors.primaryLight,
+                      borderRadius: BorderRadius.circular(WalletRadius.xs),
                     ),
                     child: const Icon(
                       Icons.people_alt_rounded,
-                      color: AppColors.primary,
+                      color: WalletColors.primary,
                       size: 18,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: WalletSpacing.sm),
                   const Text(
                     '1-on-1 Synergy Partner',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textDark,
-                    ),
+                    style: WalletTextStyles.heading3,
                   ),
                 ],
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppColors.cyanBadgeBg,
-                  borderRadius: BorderRadius.circular(8),
+                  color: WalletColors.primaryLight,
+                  borderRadius: BorderRadius.circular(WalletRadius.xs),
+                  border: Border.all(color: WalletColors.primaryBorder, width: 0.8),
                 ),
                 child: const Text(
                   '1-on-1 Only',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.primaryDarkBlue,
+                    color: WalletColors.primary,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: WalletSpacing.md),
           Row(
             children: [
               Container(
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: AppColors.mintSoft,
-                  borderRadius: BorderRadius.circular(14),
+                  color: WalletColors.surfaceMuted,
+                  borderRadius: BorderRadius.circular(WalletRadius.md),
+                  border: Border.all(color: WalletColors.border, width: 1.2),
                 ),
                 child: const Center(
                   child: Text(
                     'JL',
                     style: TextStyle(
-                      color: AppColors.primaryVibrant,
+                      color: WalletColors.primary,
                       fontWeight: FontWeight.w800,
                       fontSize: 16,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: WalletSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -699,38 +669,28 @@ class ProfileScreen extends BaseView<ProfileController> {
                     Obx(
                       () => Text(
                         controller.partnerName.value,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textDark,
-                        ),
+                        style: WalletTextStyles.heading4,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Obx(
                       () => Text(
                         controller.partnerStatus.value,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textSlate,
-                        ),
+                        style: WalletTextStyles.bodyMuted,
                       ),
                     ),
                   ],
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: AppColors.streakOrangeBg,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(WalletRadius.md),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.bolt_rounded,
-                        color: AppColors.streakOrange, size: 16),
+                    const Icon(Icons.bolt_rounded, color: AppColors.streakOrange, size: 16),
                     const SizedBox(width: 3),
                     Obx(
                       () => Text(
@@ -747,7 +707,7 @@ class ProfileScreen extends BaseView<ProfileController> {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: WalletSpacing.md),
           Row(
             children: [
               Expanded(
@@ -763,9 +723,9 @@ class ProfileScreen extends BaseView<ProfileController> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 9),
                     decoration: BoxDecoration(
-                      color: AppColors.cyanPillBg,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.cyanPillBorder),
+                      color: WalletColors.surfaceMuted,
+                      borderRadius: BorderRadius.circular(WalletRadius.md),
+                      border: Border.all(color: WalletColors.border),
                     ),
                     child: const Center(
                       child: Text(
@@ -773,14 +733,14 @@ class ProfileScreen extends BaseView<ProfileController> {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.primaryDarkBlue,
+                          color: WalletColors.primary,
                         ),
                       ),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: WalletSpacing.sm),
               Expanded(
                 child: GestureDetector(
                   onTap: () {
@@ -794,9 +754,9 @@ class ProfileScreen extends BaseView<ProfileController> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 9),
                     decoration: BoxDecoration(
-                      color: AppColors.cyanPillBg,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.cyanPillBorder),
+                      color: WalletColors.surfaceMuted,
+                      borderRadius: BorderRadius.circular(WalletRadius.md),
+                      border: Border.all(color: WalletColors.border),
                     ),
                     child: const Center(
                       child: Text(
@@ -804,7 +764,7 @@ class ProfileScreen extends BaseView<ProfileController> {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textSubtitle,
+                          color: WalletColors.textSecondary,
                         ),
                       ),
                     ),
@@ -823,17 +783,12 @@ class ProfileScreen extends BaseView<ProfileController> {
   // ---------------------------------------------------------------------------
   Widget _buildSettingsCard(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        color: WalletColors.surface,
+        borderRadius: BorderRadius.circular(WalletRadius.xl),
+        border: Border.all(color: WalletColors.border, width: 1.0),
+        boxShadow: WalletShadows.level1,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -843,27 +798,23 @@ class ProfileScreen extends BaseView<ProfileController> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: AppColors.cyanBadgeBg,
-                  borderRadius: BorderRadius.circular(8),
+                  color: WalletColors.surfaceMuted,
+                  borderRadius: BorderRadius.circular(WalletRadius.xs),
                 ),
                 child: const Icon(
                   Icons.settings_rounded,
-                  color: AppColors.primary,
+                  color: WalletColors.primary,
                   size: 18,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: WalletSpacing.sm),
               const Text(
                 'Settings & Preferences',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textDark,
-                ),
+                style: WalletTextStyles.heading3,
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: WalletSpacing.md),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Row(
@@ -874,16 +825,12 @@ class ProfileScreen extends BaseView<ProfileController> {
                     children: [
                       Text(
                         'Hydration Push Reminders',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textDark,
-                        ),
+                        style: WalletTextStyles.heading4,
                       ),
                       SizedBox(height: 2),
                       Text(
                         'Timely alerts during your active hours',
-                        style: TextStyle(fontSize: 12, color: AppColors.textSlate),
+                        style: WalletTextStyles.bodyMuted,
                       ),
                     ],
                   ),
@@ -891,15 +838,14 @@ class ProfileScreen extends BaseView<ProfileController> {
                 Obx(
                   () => Switch(
                     value: controller.hydrationRemindersEnabled.value,
-                    activeTrackColor: AppColors.primaryVibrant,
-                    onChanged: (val) =>
-                        controller.hydrationRemindersEnabled.value = val,
+                    activeTrackColor: WalletColors.primary,
+                    onChanged: (val) => controller.hydrationRemindersEnabled.value = val,
                   ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1, color: AppColors.divider),
+          const Divider(height: 1, color: WalletColors.divider),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Row(
@@ -910,16 +856,12 @@ class ProfileScreen extends BaseView<ProfileController> {
                     children: [
                       Text(
                         '1-on-1 Partner Nudges',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textDark,
-                        ),
+                        style: WalletTextStyles.heading4,
                       ),
                       SizedBox(height: 2),
                       Text(
                         'Allow Jamie to send hydration alerts',
-                        style: TextStyle(fontSize: 12, color: AppColors.textSlate),
+                        style: WalletTextStyles.bodyMuted,
                       ),
                     ],
                   ),
@@ -927,25 +869,24 @@ class ProfileScreen extends BaseView<ProfileController> {
                 Obx(
                   () => Switch(
                     value: controller.partnerNudgesEnabled.value,
-                    activeTrackColor: AppColors.primaryVibrant,
-                    onChanged: (val) =>
-                        controller.partnerNudgesEnabled.value = val,
+                    activeTrackColor: WalletColors.primary,
+                    onChanged: (val) => controller.partnerNudgesEnabled.value = val,
                   ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1, color: AppColors.divider),
-          const SizedBox(height: 16),
+          const Divider(height: 1, color: WalletColors.divider),
+          const SizedBox(height: WalletSpacing.lg),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.redBadge,
-                side: const BorderSide(color: AppColors.errorBorder),
+                foregroundColor: WalletColors.error,
+                side: const BorderSide(color: WalletColors.errorBorder),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(WalletRadius.md),
                 ),
               ),
               icon: const Icon(Icons.logout_rounded, size: 18),
@@ -976,14 +917,15 @@ class ProfileScreen extends BaseView<ProfileController> {
         width: 56,
         height: 56,
         decoration: BoxDecoration(
-          color: AppColors.mintSoft,
-          borderRadius: BorderRadius.circular(18),
+          color: WalletColors.surfaceMuted,
+          borderRadius: BorderRadius.circular(WalletRadius.lg),
+          border: Border.all(color: WalletColors.border, width: 1.2),
         ),
         child: Center(
           child: Text(
             initials.isNotEmpty ? initials : 'IW',
             style: const TextStyle(
-              color: AppColors.primaryVibrant,
+              color: WalletColors.primary,
               fontSize: 20,
               fontWeight: FontWeight.w800,
             ),
@@ -996,33 +938,36 @@ class ProfileScreen extends BaseView<ProfileController> {
   void _confirmSignOut(BuildContext context) {
     Get.dialog(
       AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(WalletRadius.xl)),
         title: const Text(
           'Sign Out',
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+          style: WalletTextStyles.heading2,
         ),
         content: const Text(
           'Are you sure you want to sign out of Infinity Wellness?',
-          style: TextStyle(fontSize: 14, color: AppColors.textBody),
+          style: WalletTextStyles.body,
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
             child: const Text(
               'Cancel',
-              style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textMuted),
+              style: TextStyle(fontWeight: FontWeight.w700, color: WalletColors.textMuted),
             ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.redBadge,
-              foregroundColor: AppColors.surface,
+              backgroundColor: WalletColors.error,
+              foregroundColor: Colors.white,
               elevation: 0,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(WalletRadius.md),
               ),
             ),
-            onPressed: () => controller.signOut(),
+            onPressed: () {
+              Get.back();
+              controller.signOut();
+            },
             child: const Text(
               'Sign Out',
               style: TextStyle(fontWeight: FontWeight.w700),

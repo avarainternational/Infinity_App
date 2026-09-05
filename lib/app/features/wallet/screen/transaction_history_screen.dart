@@ -13,7 +13,24 @@ class WalletTransactionHistoryScreen extends BaseView<WalletController> {
   @override
   Widget buildView(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text(AppString.walletHistoryTitle)),
+      backgroundColor: WalletColors.background,
+      appBar: AppBar(
+        title: const Text(
+          AppString.walletHistoryTitle,
+          style: TextStyle(
+            color: WalletColors.textPrimary,
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
+        ),
+        backgroundColor: WalletColors.surface,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1, thickness: 1, color: WalletColors.border),
+        ),
+      ),
       body: SafeArea(
         child: Obx(() {
           final records = controller.history;
@@ -23,7 +40,14 @@ class WalletTransactionHistoryScreen extends BaseView<WalletController> {
               children: const [
                 SectionCard(
                   title: AppString.walletHistoryTitle,
-                  child: Text(AppString.walletNoHistory),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: WalletSpacing.md),
+                    child: Text(
+                      AppString.walletNoHistory,
+                      style: WalletTextStyles.bodyMuted,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 ),
               ],
             );
@@ -50,55 +74,148 @@ class _HistoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isSuccess = record.status == WalletTransactionStatus.success;
-    final title = '${record.amount} ${record.assetCode}';
-    final subtitle =
-        '${_short(record.senderPublicKey)} -> ${_short(record.recipientPublicKey)}';
+    final amountText = '${record.amount} ${record.assetCode}';
+    final routeText =
+        '${_short(record.senderPublicKey)} → ${_short(record.recipientPublicKey)}';
 
-    return SectionCard(
-      title: title,
+    return Container(
+      decoration: BoxDecoration(
+        color: WalletColors.surface,
+        borderRadius: BorderRadius.circular(WalletRadius.lg),
+        border: Border.all(color: WalletColors.border, width: 1),
+        boxShadow: WalletShadows.level1,
+      ),
       child: ListTile(
-        contentPadding: EdgeInsets.zero,
-        leading: Icon(
-          isSuccess ? Icons.check_circle_outline : Icons.error_outline,
-          color: isSuccess
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.error,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: WalletSpacing.md,
+          vertical: WalletSpacing.xs,
         ),
-        title: Text(
-          isSuccess
-              ? AppString.walletTransactionSuccess
-              : AppString.walletTransactionFailed,
+        leading: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: isSuccess ? WalletColors.successBg : WalletColors.errorBg,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isSuccess
+                  ? WalletColors.successBorder
+                  : WalletColors.errorBorder,
+            ),
+          ),
+          child: Center(
+            child: Icon(
+              isSuccess
+                  ? Icons.arrow_outward_rounded
+                  : Icons.error_outline_rounded,
+              size: 20,
+              color: isSuccess ? WalletColors.success : WalletColors.error,
+            ),
+          ),
         ),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => showDialog<void>(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: Text(title),
-            content: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _Detail(
-                    AppString.walletRecipientLabel,
-                    record.recipientPublicKey,
-                  ),
-                  _Detail(
-                    AppString.walletPublicKeyLabel,
-                    record.senderPublicKey,
-                  ),
-                  _Detail(AppString.walletNetworkLabel, record.network),
-                  if (record.transactionHash?.isNotEmpty == true)
-                    _Detail(
-                      AppString.walletTransactionHashLabel,
-                      record.transactionHash!,
-                    ),
-                  if (record.errorMessage?.isNotEmpty == true)
-                    _Detail(AppString.walletErrorLabel, record.errorMessage!),
-                ],
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              amountText,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: WalletColors.textPrimary,
               ),
             ),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: WalletSpacing.sm,
+                vertical: WalletSpacing.xxs + 1,
+              ),
+              decoration: BoxDecoration(
+                color: isSuccess ? WalletColors.successBg : WalletColors.errorBg,
+                borderRadius: BorderRadius.circular(WalletRadius.xs),
+                border: Border.all(
+                  color: isSuccess
+                      ? WalletColors.successBorder
+                      : WalletColors.errorBorder,
+                ),
+              ),
+              child: Text(
+                isSuccess
+                    ? AppString.walletTransactionSuccess
+                    : AppString.walletTransactionFailed,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: isSuccess ? WalletColors.success : WalletColors.error,
+                ),
+              ),
+            ),
+          ],
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: WalletSpacing.xxs),
+          child: Text(
+            routeText,
+            style: WalletTextStyles.bodyMuted,
+          ),
+        ),
+        trailing: const Icon(
+          Icons.chevron_right_rounded,
+          color: WalletColors.textMuted,
+        ),
+        onTap: () => _showDetailsModal(context),
+      ),
+    );
+  }
+
+  void _showDetailsModal(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: WalletColors.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(WalletRadius.lg),
+          side: const BorderSide(color: WalletColors.border),
+        ),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '${record.amount} ${record.assetCode}',
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 18,
+                color: WalletColors.textPrimary,
+              ),
+            ),
+            IconButton(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.close_rounded, size: 20),
+              color: WalletColors.textMuted,
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _Detail(
+                AppString.walletRecipientLabel,
+                record.recipientPublicKey,
+              ),
+              _Detail(
+                AppString.walletPublicKeyLabel,
+                record.senderPublicKey,
+              ),
+              _Detail(AppString.walletNetworkLabel, record.network),
+              if (record.transactionHash?.isNotEmpty == true)
+                _Detail(
+                  AppString.walletTransactionHashLabel,
+                  record.transactionHash!,
+                ),
+              if (record.errorMessage?.isNotEmpty == true)
+                _Detail(AppString.walletErrorLabel, record.errorMessage!),
+            ],
           ),
         ),
       ),
@@ -122,13 +239,35 @@ class _Detail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: WalletSpacing.sm),
+      padding: const EdgeInsets.only(bottom: WalletSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: Theme.of(context).textTheme.labelLarge),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: WalletColors.textMuted,
+            ),
+          ),
           const SizedBox(height: WalletSpacing.xs),
-          SelectableText(value),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(
+              horizontal: WalletSpacing.md,
+              vertical: WalletSpacing.sm,
+            ),
+            decoration: BoxDecoration(
+              color: WalletColors.surfaceMuted,
+              borderRadius: BorderRadius.circular(WalletRadius.sm),
+              border: Border.all(color: WalletColors.border),
+            ),
+            child: SelectableText(
+              value,
+              style: WalletTextStyles.mono,
+            ),
+          ),
         ],
       ),
     );

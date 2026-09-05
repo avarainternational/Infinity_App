@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:infinity_wellness/app/constant/resources/app_colors.dart';
 import 'package:infinity_wellness/app/core/base/base_view.dart';
 import 'package:infinity_wellness/app/features/feed/controller/feed_controller.dart';
+import 'package:infinity_wellness/app/features/wallet/utility/wallet_ui_metrics.dart';
 
 class FeedScreen extends BaseView<FeedController> {
   const FeedScreen({super.key});
@@ -10,36 +11,38 @@ class FeedScreen extends BaseView<FeedController> {
   @override
   Widget buildView(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: AppColors.ambientGradientColors,
+      color: WalletColors.background,
+      child: SafeArea(
+        bottom: false,
+        child: RefreshIndicator(
+          onRefresh: controller.refreshFeed,
+          color: WalletColors.primary,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
+            children: [
+              // 1. Top Header: Title, Icon & Subtitle
+              _buildTopHeader(context),
+              const SizedBox(height: WalletSpacing.lg),
+
+              // 2. Segmented Toggle: Challenges vs Wellness Feed vs Leaderboard
+              _buildSegmentedTabToggle(),
+              const SizedBox(height: WalletSpacing.lg),
+
+              // 3. Content based on active tab
+              Obx(() {
+                switch (controller.activeTab.value) {
+                  case SocialTab.challenges:
+                    return _buildChallengesList(context);
+                  case SocialTab.feed:
+                    return _buildFeedList(context);
+                  case SocialTab.leaderboard:
+                    return _buildLeaderboardView(context);
+                }
+              }),
+            ],
+          ),
         ),
-      ),
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 14, 18, 110),
-        children: [
-          // 1. Top Header: Title, Icon & Subtitle
-          _buildTopHeader(context),
-          const SizedBox(height: 16),
-
-          // 2. Segmented Toggle: Challenges vs Wellness Feed vs Leaderboard
-          _buildSegmentedTabToggle(),
-          const SizedBox(height: 16),
-
-          // 3. Content based on active tab
-          Obx(() {
-            switch (controller.activeTab.value) {
-              case SocialTab.challenges:
-                return _buildChallengesList(context);
-              case SocialTab.feed:
-                return _buildFeedList(context);
-              case SocialTab.leaderboard:
-                return _buildLeaderboardView(context);
-            }
-          }),
-        ],
       ),
     );
   }
@@ -55,22 +58,28 @@ class FeedScreen extends BaseView<FeedController> {
         Expanded(
           child: Row(
             children: [
+              // Social Icon Container with custom Shadcn blue styling
               Container(
-                width: 52,
-                height: 52,
-                decoration: const BoxDecoration(
-                  color: AppColors.mintSoft,
-                  shape: BoxShape.circle,
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: WalletColors.surface,
+                  borderRadius: BorderRadius.circular(WalletRadius.md),
+                  border: Border.all(
+                    color: WalletColors.primaryBorder,
+                    width: 1.2,
+                  ),
+                  boxShadow: WalletShadows.level1,
                 ),
                 child: const Center(
                   child: Icon(
                     Icons.groups_rounded,
-                    size: 28,
-                    color: AppColors.primaryVibrant,
+                    size: 26,
+                    color: WalletColors.primary,
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: WalletSpacing.md),
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,21 +87,12 @@ class FeedScreen extends BaseView<FeedController> {
                   children: [
                     Text(
                       'Social & Feed',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textDark,
-                        letterSpacing: -0.4,
-                      ),
+                      style: WalletTextStyles.heading2,
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'Community challenges, verified insights & leaderboard',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSubtitle,
-                      ),
+                      'Verified medical insights, challenges & leaderboards',
+                      style: WalletTextStyles.bodyMuted,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
@@ -101,6 +101,42 @@ class FeedScreen extends BaseView<FeedController> {
             ],
           ),
         ),
+        const SizedBox(width: WalletSpacing.sm),
+        // Circular Refresh Button
+        Obx(() {
+          return GestureDetector(
+            onTap: controller.isLoadingFeed.value ? null : () => controller.refreshFeed(),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: WalletColors.surface,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: WalletColors.border,
+                  width: 1,
+                ),
+                boxShadow: WalletShadows.level1,
+              ),
+              child: Center(
+                child: controller.isLoadingFeed.value
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: WalletColors.primary,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.refresh_rounded,
+                        size: 20,
+                        color: WalletColors.primary,
+                      ),
+              ),
+            ),
+          );
+        }),
       ],
     );
   }
@@ -113,10 +149,11 @@ class FeedScreen extends BaseView<FeedController> {
       final active = controller.activeTab.value;
 
       return Container(
-        padding: const EdgeInsets.all(4),
+        padding: const EdgeInsets.all(WalletSpacing.xs),
         decoration: BoxDecoration(
-          color: AppColors.cyanToggleBg,
-          borderRadius: BorderRadius.circular(16),
+          color: WalletColors.tabBg,
+          borderRadius: BorderRadius.circular(WalletRadius.lg),
+          border: Border.all(color: WalletColors.border, width: 1),
         ),
         child: Row(
           children: [
@@ -129,18 +166,13 @@ class FeedScreen extends BaseView<FeedController> {
                   padding: const EdgeInsets.symmetric(vertical: 9),
                   decoration: BoxDecoration(
                     color: active == SocialTab.challenges
-                        ? AppColors.surface
+                        ? WalletColors.surface
                         : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: active == SocialTab.challenges
-                        ? [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.06),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ]
+                    borderRadius: BorderRadius.circular(WalletRadius.md),
+                    border: active == SocialTab.challenges
+                        ? Border.all(color: WalletColors.border.withValues(alpha: 0.8), width: 1)
                         : null,
+                    boxShadow: active == SocialTab.challenges ? WalletShadows.level1 : null,
                   ),
                   child: Center(
                     child: Text(
@@ -151,8 +183,8 @@ class FeedScreen extends BaseView<FeedController> {
                             ? FontWeight.w800
                             : FontWeight.w600,
                         color: active == SocialTab.challenges
-                            ? AppColors.textDark
-                            : AppColors.textMuted,
+                            ? WalletColors.textPrimary
+                            : WalletColors.textMuted,
                       ),
                     ),
                   ),
@@ -169,18 +201,13 @@ class FeedScreen extends BaseView<FeedController> {
                   padding: const EdgeInsets.symmetric(vertical: 9),
                   decoration: BoxDecoration(
                     color: active == SocialTab.feed
-                        ? AppColors.surface
+                        ? WalletColors.surface
                         : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: active == SocialTab.feed
-                        ? [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.06),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ]
+                    borderRadius: BorderRadius.circular(WalletRadius.md),
+                    border: active == SocialTab.feed
+                        ? Border.all(color: WalletColors.border.withValues(alpha: 0.8), width: 1)
                         : null,
+                    boxShadow: active == SocialTab.feed ? WalletShadows.level1 : null,
                   ),
                   child: Center(
                     child: Text(
@@ -191,8 +218,8 @@ class FeedScreen extends BaseView<FeedController> {
                             ? FontWeight.w800
                             : FontWeight.w600,
                         color: active == SocialTab.feed
-                            ? AppColors.textDark
-                            : AppColors.textMuted,
+                            ? WalletColors.textPrimary
+                            : WalletColors.textMuted,
                       ),
                     ),
                   ),
@@ -209,36 +236,26 @@ class FeedScreen extends BaseView<FeedController> {
                   padding: const EdgeInsets.symmetric(vertical: 9),
                   decoration: BoxDecoration(
                     color: active == SocialTab.leaderboard
-                        ? AppColors.surface
+                        ? WalletColors.surface
                         : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: active == SocialTab.leaderboard
-                        ? [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.06),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ]
+                    borderRadius: BorderRadius.circular(WalletRadius.md),
+                    border: active == SocialTab.leaderboard
+                        ? Border.all(color: WalletColors.border.withValues(alpha: 0.8), width: 1)
                         : null,
+                    boxShadow: active == SocialTab.leaderboard ? WalletShadows.level1 : null,
                   ),
                   child: Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Leaderboard',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: active == SocialTab.leaderboard
-                                ? FontWeight.w800
-                                : FontWeight.w600,
-                            color: active == SocialTab.leaderboard
-                                ? AppColors.textDark
-                                : AppColors.textMuted,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      'Rankings',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: active == SocialTab.leaderboard
+                            ? FontWeight.w800
+                            : FontWeight.w600,
+                        color: active == SocialTab.leaderboard
+                            ? WalletColors.textPrimary
+                            : WalletColors.textMuted,
+                      ),
                     ),
                   ),
                 ),
@@ -258,12 +275,61 @@ class FeedScreen extends BaseView<FeedController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildCategoryFilters(),
-        const SizedBox(height: 16),
+        const SizedBox(height: WalletSpacing.lg),
         Obx(() {
+          if (controller.isLoadingFeed.value) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 40),
+              child: Center(
+                child: CircularProgressIndicator(color: WalletColors.primary),
+              ),
+            );
+          }
+
           final items = controller.filteredItems;
+          if (items.isEmpty) {
+            return Container(
+              margin: const EdgeInsets.only(top: 16),
+              padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+              decoration: BoxDecoration(
+                color: WalletColors.surface,
+                borderRadius: BorderRadius.circular(WalletRadius.xl),
+                border: Border.all(color: WalletColors.border, width: 1),
+                boxShadow: WalletShadows.level1,
+              ),
+              child: Column(
+                children: [
+                  const Icon(Icons.feed_outlined, size: 48, color: WalletColors.textLight),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'No News Posts Yet',
+                    style: WalletTextStyles.heading3,
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Add rows to the feed_posts table in Supabase to see real-time posts appear here.',
+                    textAlign: TextAlign.center,
+                    style: WalletTextStyles.bodyMuted,
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    onPressed: () => controller.refreshFeed(),
+                    icon: const Icon(Icons.refresh_rounded, size: 18),
+                    label: const Text('Refresh Feed'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: WalletColors.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(WalletRadius.md),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
           return Column(
-            children:
-                items.map((item) => _buildFeedItemCard(context, item)).toList(),
+            children: items.map((item) => _buildFeedItemCard(context, item)).toList(),
           );
         }),
       ],
@@ -279,36 +345,27 @@ class FeedScreen extends BaseView<FeedController> {
           children: controller.categories.map((category) {
             final isSelected = controller.selectedCategory.value == category;
             return Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.only(right: WalletSpacing.sm),
               child: GestureDetector(
                 onTap: () => controller.selectCategory(category),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.cyanActiveChip
-                        : AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: isSelected
-                        ? Border.all(color: AppColors.primary, width: 1.4)
-                        : Border.all(color: AppColors.iceBlueBorder, width: 1),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.03),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    color: isSelected ? WalletColors.primaryLight : WalletColors.surface,
+                    borderRadius: BorderRadius.circular(WalletRadius.pill),
+                    border: Border.all(
+                      color: isSelected ? WalletColors.primary : WalletColors.border,
+                      width: isSelected ? 1.4 : 1,
+                    ),
+                    boxShadow: isSelected ? WalletShadows.level1 : null,
                   ),
                   child: Text(
                     category,
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                      color: isSelected
-                          ? AppColors.textDark
-                          : AppColors.textMuted,
+                      color: isSelected ? WalletColors.primary : WalletColors.textMuted,
                     ),
                   ),
                 ),
@@ -321,117 +378,372 @@ class FeedScreen extends BaseView<FeedController> {
   }
 
   Widget _buildFeedItemCard(BuildContext context, FeedItem item) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: AspectRatio(
-        aspectRatio: 16 / 9,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.12),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+    return Container(
+      margin: const EdgeInsets.only(bottom: WalletSpacing.lg),
+      decoration: BoxDecoration(
+        color: WalletColors.surface,
+        borderRadius: BorderRadius.circular(WalletRadius.xl),
+        border: Border.all(color: WalletColors.border, width: 1.0),
+        boxShadow: WalletShadows.level1,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. Author & Tag Header Row
+          _buildPostAuthorHeader(context, item),
+
+          // 2. Caption / Post Body Text (Top of Graphic - Facebook Style)
+          if (item.caption.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
+              child: Text(
+                item.caption,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: WalletColors.textPrimary,
+                  height: 1.4,
+                  letterSpacing: -0.1,
+                ),
               ),
-            ],
+            ),
+
+          // 3. 16:9 Visual Graphic Banner
+          _buildPostBannerGraphic(context, item),
+
+          // 4. Action Row (Timestamp, Save, Share)
+          _buildPostActionRow(context, item),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPostAuthorHeader(BuildContext context, FeedItem item) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 12, 10),
+      child: Row(
+        children: [
+          // Author Avatar Circle
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: WalletColors.surfaceMuted,
+              border: Border.all(color: WalletColors.border, width: 1.2),
+            ),
+            child: Center(
+              child: Text(
+                item.authorAvatarText,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  color: WalletColors.primary,
+                  letterSpacing: -0.5,
+                ),
+              ),
+            ),
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: item.imageAsset != null
-                ? Image.asset(
-                    item.imageAsset!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        _buildFallbackNewsGraphic(item),
-                  )
-                : _buildFallbackNewsGraphic(item),
+          const SizedBox(width: 10),
+
+          // Author Name
+          Text(
+            item.authorName,
+            style: WalletTextStyles.heading3,
           ),
+          const SizedBox(width: 8),
+
+          // Promoted By / Tag Badge Pill
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+            decoration: BoxDecoration(
+              color: WalletColors.primaryLight,
+              borderRadius: BorderRadius.circular(WalletRadius.xs),
+              border: Border.all(color: WalletColors.primaryBorder, width: 0.8),
+            ),
+            child: Text(
+              item.badgeText,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: WalletColors.primary,
+              ),
+            ),
+          ),
+
+          const Spacer(),
+
+          // Bell Icon
+          IconButton(
+            constraints: const BoxConstraints(),
+            padding: const EdgeInsets.all(6),
+            icon: const Icon(
+              Icons.notifications_none_rounded,
+              color: WalletColors.textLight,
+              size: 20,
+            ),
+            onPressed: () {
+              Get.snackbar(
+                'Notifications',
+                'Subscribed to updates from ${item.authorName}',
+                snackPosition: SnackPosition.BOTTOM,
+                duration: const Duration(seconds: 2),
+              );
+            },
+          ),
+
+          // 3-Dots Vert Options
+          IconButton(
+            constraints: const BoxConstraints(),
+            padding: const EdgeInsets.all(6),
+            icon: const Icon(
+              Icons.more_vert_rounded,
+              color: WalletColors.textLight,
+              size: 20,
+            ),
+            onPressed: () => _showPostOptionsMenu(context, item),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPostBannerGraphic(BuildContext context, FeedItem item) {
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Background Visual (Network or Asset or Gradient Fallback)
+          if (item.imageUrl != null && item.imageUrl!.startsWith('http'))
+            Image.network(
+              item.imageUrl!,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) =>
+                  item.imageAsset != null
+                      ? Image.asset(item.imageAsset!, fit: BoxFit.cover, errorBuilder: (c, e, s) => _buildFallbackGradientGraphic(item))
+                      : _buildFallbackGradientGraphic(item),
+            )
+          else if (item.imageAsset != null)
+            Image.asset(
+              item.imageAsset!,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) =>
+                  _buildFallbackGradientGraphic(item),
+            )
+          else
+            _buildFallbackGradientGraphic(item),
+
+          // Top Right Price / Promo Tag if available
+          if (item.priceTag != null)
+            Positioned(
+              top: 14,
+              right: 14,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: WalletColors.error,
+                  borderRadius: BorderRadius.circular(WalletRadius.xs),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 6,
+                    ),
+                  ],
+                ),
+                child: Text(
+                  item.priceTag!,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+
+          // Bottom Overlay Badge (e.g. BEIJING-GUANGZHOU or WWW.JJEXPRESS.NET)
+          if (item.badgeOverlayText != null)
+            Positioned(
+              left: 0,
+              bottom: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.black.withValues(alpha: 0.75),
+                      Colors.transparent,
+                    ],
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      item.badgeOverlayText!,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: 0.8,
+                        shadows: [
+                          Shadow(color: Colors.black, blurRadius: 4),
+                        ],
+                      ),
+                    ),
+                    if (item.id == 'feed-2')
+                      const Text(
+                        '📞 09 772 82 3000',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFallbackGradientGraphic(FeedItem item) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: item.bannerGradient,
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          item.bannerIcon,
+          size: 64,
+          color: Colors.white.withValues(alpha: 0.3),
         ),
       ),
     );
   }
 
-  Widget _buildFallbackNewsGraphic(FeedItem item) {
-    return Stack(
-      children: [
-        // 1. Ambient Background Glowing Circles
-        Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: item.bannerGradient,
-            ),
+  Widget _buildPostActionRow(BuildContext context, FeedItem item) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+      child: Row(
+        children: [
+          // Time Ago
+          Text(
+            item.timeAgo,
+            style: WalletTextStyles.label,
           ),
-        ),
-        Positioned(
-          left: -25,
-          top: -25,
-          child: Container(
-            width: 130,
-            height: 130,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.16),
-            ),
-          ),
-        ),
-        Positioned(
-          right: -5,
-          bottom: -5,
-          child: Icon(
-            item.bannerIcon,
-            size: 130,
-            color: Colors.white.withValues(alpha: 0.15),
-          ),
-        ),
+          const Spacer(),
 
-        // 2. Smooth Dark Scrim
-        Positioned.fill(
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                stops: const [0.0, 0.30, 0.65, 1.0],
-                colors: [
-                  Colors.black.withValues(alpha: 0.04),
-                  Colors.black.withValues(alpha: 0.22),
-                  Colors.black.withValues(alpha: 0.68),
-                  Colors.black.withValues(alpha: 0.90),
-                ],
+          // Save Action Button (Saves to Bookmarks / Supabase)
+          Obx(() {
+            final isSaved = controller.isSaved(item.id);
+            return _buildActionButton(
+              icon: isSaved ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
+              label: 'Save',
+              iconColor: isSaved ? WalletColors.primary : WalletColors.textMuted,
+              textColor: isSaved ? WalletColors.primary : WalletColors.textMuted,
+              onTap: () => controller.toggleSave(item),
+            );
+          }),
+          const SizedBox(width: WalletSpacing.lg),
+
+          // Share Action Button
+          _buildActionButton(
+            icon: Icons.share_outlined,
+            label: 'Share',
+            iconColor: WalletColors.textMuted,
+            textColor: WalletColors.textMuted,
+            onTap: () => controller.sharePost(item),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color iconColor,
+    required Color textColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: WalletColors.surfaceMuted,
+          borderRadius: BorderRadius.circular(WalletRadius.md),
+          border: Border.all(color: WalletColors.border, width: 1.0),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: iconColor),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: textColor,
               ),
             ),
-          ),
+          ],
         ),
+      ),
+    );
+  }
 
-        // 3. Title
-        Positioned(
-          left: 18,
-          right: 18,
-          bottom: 18,
-          child: Text(
-            item.title,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-              height: 1.28,
-              letterSpacing: -0.25,
-              shadows: [
-                Shadow(
-                  color: Color(0xDD000000),
-                  offset: Offset(0, 1.5),
-                  blurRadius: 8,
-                ),
-              ],
-            ),
-          ),
+  void _showPostOptionsMenu(BuildContext context, FeedItem item) {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+        decoration: const BoxDecoration(
+          color: WalletColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(WalletRadius.xl)),
         ),
-      ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.bookmark_outline_rounded, color: WalletColors.primary),
+              title: Text(
+                controller.isSaved(item.id) ? 'Remove from Saved' : 'Save Post to Bookmarks',
+                style: WalletTextStyles.heading4,
+              ),
+              onTap: () {
+                Get.back();
+                controller.toggleSave(item);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.share_outlined, color: WalletColors.primary),
+              title: const Text('Share Post Link', style: WalletTextStyles.heading4),
+              onTap: () {
+                Get.back();
+                controller.sharePost(item);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.hide_source_rounded, color: WalletColors.textMuted),
+              title: const Text('Hide posts like this', style: WalletTextStyles.bodyMuted),
+              onTap: () => Get.back(),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -443,7 +755,7 @@ class FeedScreen extends BaseView<FeedController> {
       return Column(
         children: controller.challenges.map((challenge) {
           return Padding(
-            padding: const EdgeInsets.only(bottom: 14),
+            padding: const EdgeInsets.only(bottom: WalletSpacing.md),
             child: AspectRatio(
               aspectRatio: 16 / 9,
               child: Container(
@@ -453,11 +765,10 @@ class FeedScreen extends BaseView<FeedController> {
                     end: Alignment.bottomRight,
                     colors: challenge.bannerGradient,
                   ),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(WalletRadius.xl),
                   boxShadow: [
                     BoxShadow(
-                      color: challenge.bannerGradient.first
-                          .withValues(alpha: 0.35),
+                      color: challenge.bannerGradient.first.withValues(alpha: 0.35),
                       blurRadius: 14,
                       offset: const Offset(0, 5),
                     ),
@@ -469,7 +780,7 @@ class FeedScreen extends BaseView<FeedController> {
                   ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(WalletRadius.xl),
                   child: Stack(
                     children: [
                       // 1. Ambient Background Glowing Circles
@@ -537,36 +848,30 @@ class FeedScreen extends BaseView<FeedController> {
                           children: [
                             // Top Row: Category pill & Points Reward
                             Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: Colors.white
-                                        .withValues(alpha: 0.92),
-                                    borderRadius: BorderRadius.circular(8),
+                                    color: Colors.white.withValues(alpha: 0.92),
+                                    borderRadius: BorderRadius.circular(WalletRadius.xs),
                                   ),
                                   child: Text(
                                     challenge.category,
                                     style: const TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w800,
-                                      color: AppColors.textDark,
+                                      color: WalletColors.textPrimary,
                                     ),
                                   ),
                                 ),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color:
-                                        Colors.black.withValues(alpha: 0.60),
-                                    borderRadius: BorderRadius.circular(8),
+                                    color: Colors.black.withValues(alpha: 0.60),
+                                    borderRadius: BorderRadius.circular(WalletRadius.xs),
                                     border: Border.all(
-                                      color: Colors.white
-                                          .withValues(alpha: 0.25),
+                                      color: Colors.white.withValues(alpha: 0.25),
                                       width: 0.8,
                                     ),
                                   ),
@@ -574,7 +879,7 @@ class FeedScreen extends BaseView<FeedController> {
                                     children: [
                                       const Icon(
                                         Icons.star_rounded,
-                                        color: AppColors.streakOrange,
+                                        color: WalletColors.warning,
                                         size: 13,
                                       ),
                                       const SizedBox(width: 3),
@@ -624,17 +929,13 @@ class FeedScreen extends BaseView<FeedController> {
                                     children: [
                                       Expanded(
                                         child: ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(4),
+                                          borderRadius: BorderRadius.circular(4),
                                           child: LinearProgressIndicator(
                                             value: challenge.progress,
                                             minHeight: 6,
-                                            backgroundColor: Colors.white
-                                                .withValues(alpha: 0.25),
-                                            valueColor:
-                                                const AlwaysStoppedAnimation<
-                                                    Color>(
-                                              AppColors.cyanActiveChip,
+                                            backgroundColor: Colors.white.withValues(alpha: 0.25),
+                                            valueColor: const AlwaysStoppedAnimation<Color>(
+                                              Color(0xFF67E8F9),
                                             ),
                                           ),
                                         ),
@@ -652,17 +953,13 @@ class FeedScreen extends BaseView<FeedController> {
                                   ),
                                 ] else ...[
                                   InkWell(
-                                    onTap: () =>
-                                        controller.joinChallenge(challenge),
-                                    borderRadius: BorderRadius.circular(10),
+                                    onTap: () => controller.joinChallenge(challenge),
+                                    borderRadius: BorderRadius.circular(WalletRadius.sm),
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 6),
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                       decoration: BoxDecoration(
-                                        color: Colors.white
-                                            .withValues(alpha: 0.94),
-                                        borderRadius:
-                                            BorderRadius.circular(10),
+                                        color: Colors.white.withValues(alpha: 0.94),
+                                        borderRadius: BorderRadius.circular(WalletRadius.sm),
                                       ),
                                       child: const Row(
                                         mainAxisSize: MainAxisSize.min,
@@ -672,14 +969,14 @@ class FeedScreen extends BaseView<FeedController> {
                                             style: TextStyle(
                                               fontSize: 11.5,
                                               fontWeight: FontWeight.w800,
-                                              color: AppColors.primaryDarkBlue,
+                                              color: WalletColors.primaryDark,
                                             ),
                                           ),
                                           SizedBox(width: 4),
                                           Icon(
                                             Icons.arrow_forward_rounded,
                                             size: 13,
-                                            color: AppColors.primaryDarkBlue,
+                                            color: WalletColors.primaryDark,
                                           ),
                                         ],
                                       ),
@@ -711,11 +1008,11 @@ class FeedScreen extends BaseView<FeedController> {
       children: [
         // 1. Timeframe Filter Chips
         _buildLeaderboardFilters(),
-        const SizedBox(height: 16),
+        const SizedBox(height: WalletSpacing.lg),
 
         // 2. Top 3 Podium
         _buildPodiumView(),
-        const SizedBox(height: 20),
+        const SizedBox(height: WalletSpacing.lg),
 
         // 3. Ranked List
         _buildRankingList(),
@@ -731,35 +1028,27 @@ class FeedScreen extends BaseView<FeedController> {
         children: controller.leaderboardFilters.map((filter) {
           final isSelected = currentFilter == filter;
           return Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.only(right: WalletSpacing.sm),
             child: GestureDetector(
               onTap: () => controller.selectLeaderboardFilter(filter),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                 decoration: BoxDecoration(
-                  color:
-                      isSelected ? AppColors.cyanActiveChip : AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: isSelected
-                      ? Border.all(color: AppColors.primary, width: 1.4)
-                      : Border.all(color: AppColors.iceBlueBorder, width: 1),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  color: isSelected ? WalletColors.primaryLight : WalletColors.surface,
+                  borderRadius: BorderRadius.circular(WalletRadius.pill),
+                  border: Border.all(
+                    color: isSelected ? WalletColors.primary : WalletColors.border,
+                    width: isSelected ? 1.4 : 1,
+                  ),
+                  boxShadow: isSelected ? WalletShadows.level1 : null,
                 ),
                 child: Text(
                   filter,
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                    color:
-                        isSelected ? AppColors.textDark : AppColors.textMuted,
+                    color: isSelected ? WalletColors.primary : WalletColors.textMuted,
                   ),
                 ),
               ),
@@ -771,63 +1060,65 @@ class FeedScreen extends BaseView<FeedController> {
   }
 
   Widget _buildPodiumView() {
-    final topUsers = controller.leaderboardUsers.take(3).toList();
-    if (topUsers.length < 3) return const SizedBox.shrink();
+    return Obx(() {
+      final topUsers = controller.leaderboardUsers.take(3).toList();
+      if (topUsers.length < 3) return const SizedBox.shrink();
 
-    final rank1 = topUsers[0];
-    final rank2 = topUsers[1];
-    final rank3 = topUsers[2];
+      final rank1 = topUsers[0];
+      final rank2 = topUsers[1];
+      final rank3 = topUsers[2];
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        // 2nd Place (Silver)
-        Expanded(
-          child: _buildPodiumCard(
-            user: rank2,
-            height: 165,
-            crownColor: const Color(0xFF9E9E9E),
-            medalEmoji: '🥈',
-            podiumColor: const Color(0xFFF1F5F9),
-            borderColor: const Color(0xFFCBD5E1),
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          // 2nd Place (Silver)
+          Expanded(
+            child: _buildPodiumCard(
+              user: rank2,
+              height: 168,
+              medalIcon: Icons.military_tech_rounded,
+              medalColor: const Color(0xFF64748B),
+              podiumColor: WalletColors.surfaceMuted,
+              borderColor: const Color(0xFFCBD5E1),
+            ),
           ),
-        ),
-        const SizedBox(width: 8),
+          const SizedBox(width: WalletSpacing.sm),
 
-        // 1st Place (Gold - Elevated)
-        Expanded(
-          child: _buildPodiumCard(
-            user: rank1,
-            height: 190,
-            crownColor: const Color(0xFFFFB300),
-            medalEmoji: '👑',
-            podiumColor: const Color(0xFFFEF3C7),
-            borderColor: const Color(0xFFFCD34D),
-            isFirst: true,
+          // 1st Place (Gold - Elevated)
+          Expanded(
+            child: _buildPodiumCard(
+              user: rank1,
+              height: 194,
+              medalIcon: Icons.workspace_premium_rounded,
+              medalColor: const Color(0xFFD97706),
+              podiumColor: WalletColors.warningBg,
+              borderColor: const Color(0xFFFCD34D),
+              isFirst: true,
+            ),
           ),
-        ),
-        const SizedBox(width: 8),
+          const SizedBox(width: WalletSpacing.sm),
 
-        // 3rd Place (Bronze)
-        Expanded(
-          child: _buildPodiumCard(
-            user: rank3,
-            height: 155,
-            crownColor: const Color(0xFFCD7F32),
-            medalEmoji: '🥉',
-            podiumColor: const Color(0xFFFFF1EE),
-            borderColor: const Color(0xFFFFCCBC),
+          // 3rd Place (Bronze)
+          Expanded(
+            child: _buildPodiumCard(
+              user: rank3,
+              height: 158,
+              medalIcon: Icons.shield_rounded,
+              medalColor: const Color(0xFFB45309),
+              podiumColor: const Color(0xFFFFF1EE),
+              borderColor: const Color(0xFFFFCCBC),
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    });
   }
 
   Widget _buildPodiumCard({
     required LeaderboardUser user,
     required double height,
-    required Color crownColor,
-    required String medalEmoji,
+    required IconData medalIcon,
+    required Color medalColor,
     required Color podiumColor,
     required Color borderColor,
     bool isFirst = false,
@@ -836,45 +1127,53 @@ class FeedScreen extends BaseView<FeedController> {
       height: height,
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
+        color: WalletColors.surface,
+        borderRadius: BorderRadius.circular(WalletRadius.xl),
         border: Border.all(color: borderColor, width: isFirst ? 1.8 : 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: isFirst
-                ? const Color(0xFFFFB300).withValues(alpha: 0.18)
-                : Colors.black.withValues(alpha: 0.04),
-            blurRadius: isFirst ? 14 : 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: isFirst ? WalletShadows.level2 : WalletShadows.level1,
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Column(
             children: [
-              Text(
-                medalEmoji,
-                style: TextStyle(fontSize: isFirst ? 20 : 16),
-              ),
-              const SizedBox(height: 2),
               Container(
-                width: isFirst ? 42 : 36,
-                height: isFirst ? 42 : 36,
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: podiumColor,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  medalIcon,
+                  size: isFirst ? 22 : 18,
+                  color: medalColor,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                width: isFirst ? 44 : 38,
+                height: isFirst ? 44 : 38,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: user.avatarGradient,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   shape: BoxShape.circle,
                   border: Border.all(color: borderColor, width: 1.5),
                 ),
                 child: Center(
                   child: Text(
-                    user.avatarEmoji,
-                    style: TextStyle(fontSize: isFirst ? 20 : 16),
+                    user.initials,
+                    style: TextStyle(
+                      fontSize: isFirst ? 14 : 12,
+                      fontWeight: FontWeight.w900,
+                      color: WalletColors.textPrimary,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 5),
               Text(
                 user.name,
                 maxLines: 1,
@@ -883,7 +1182,7 @@ class FeedScreen extends BaseView<FeedController> {
                 style: TextStyle(
                   fontSize: isFirst ? 12.5 : 11.5,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textDark,
+                  color: WalletColors.textPrimary,
                 ),
               ),
             ],
@@ -891,11 +1190,10 @@ class FeedScreen extends BaseView<FeedController> {
           Column(
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: AppColors.streakOrangeBg,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(WalletRadius.xs),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -923,7 +1221,7 @@ class FeedScreen extends BaseView<FeedController> {
                 style: TextStyle(
                   fontSize: isFirst ? 12 : 11,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.primaryDarkBlue,
+                  color: WalletColors.primary,
                 ),
               ),
             ],
@@ -934,175 +1232,177 @@ class FeedScreen extends BaseView<FeedController> {
   }
 
   Widget _buildRankingList() {
-    final remainingUsers = controller.leaderboardUsers.skip(3).toList();
+    return Obx(() {
+      final remainingUsers = controller.leaderboardUsers.skip(3).toList();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Rankings',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textDark,
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Rankings',
+            style: WalletTextStyles.heading3,
           ),
-        ),
-        const SizedBox(height: 10),
-        ...remainingUsers.map((user) {
-          final isUser = user.isCurrentUser;
+          const SizedBox(height: WalletSpacing.sm),
+          ...remainingUsers.map((user) {
+            final isUser = user.isCurrentUser;
 
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: isUser ? const Color(0xFFF0FDF4) : AppColors.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isUser
-                      ? AppColors.primaryVibrant
-                      : AppColors.iceBlueBorder,
-                  width: isUser ? 1.5 : 1,
+            return Padding(
+              padding: const EdgeInsets.only(bottom: WalletSpacing.sm),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: isUser ? WalletColors.shopBg : WalletColors.surface,
+                  borderRadius: BorderRadius.circular(WalletRadius.lg),
+                  border: Border.all(
+                    color: isUser ? WalletColors.primary : WalletColors.border,
+                    width: isUser ? 1.4 : 1.0,
+                  ),
+                  boxShadow: isUser ? WalletShadows.level2 : WalletShadows.level1,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: isUser
-                        ? AppColors.primaryVibrant.withValues(alpha: 0.10)
-                        : Colors.black.withValues(alpha: 0.02),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  // Rank Number
-                  SizedBox(
-                    width: 24,
-                    child: Text(
-                      '#${user.rank}',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        color: isUser
-                            ? AppColors.primaryVibrant
-                            : AppColors.textSlate,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  // Avatar Emoji
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: isUser
-                          ? AppColors.mintSoft
-                          : AppColors.cyanPillBg,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
+                child: Row(
+                  children: [
+                    // Rank Number
+                    SizedBox(
+                      width: 28,
                       child: Text(
-                        user.avatarEmoji,
-                        style: const TextStyle(fontSize: 18),
+                        '#${user.rank}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: isUser ? WalletColors.primary : WalletColors.textLight,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
+                    const SizedBox(width: 6),
 
-                  // User Name + Badge Title
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              user.name,
-                              style: TextStyle(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w800,
-                                color: isUser
-                                    ? AppColors.primaryDarkBlue
-                                    : AppColors.textDark,
-                              ),
-                            ),
-                            if (isUser) ...[
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 6, vertical: 1.5),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryVibrant,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: const Text(
-                                  'YOU',
+                    // Avatar Circle with Initials & Gradient
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: user.avatarGradient,
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isUser ? WalletColors.primary : WalletColors.border,
+                          width: 1.2,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          user.initials,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                            color: isUser ? WalletColors.primary : WalletColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+
+                    // User Name + Badge Title
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  user.name,
+                                  overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w900,
-                                    color: Colors.white,
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: isUser ? WalletColors.primary : WalletColors.textPrimary,
                                   ),
                                 ),
                               ),
+                              if (isUser) ...[
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                  decoration: BoxDecoration(
+                                    color: WalletColors.primary,
+                                    borderRadius: BorderRadius.circular(WalletRadius.xs),
+                                  ),
+                                  child: const Text(
+                                    'YOU',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ],
+                          ),
+                          if (user.badgeTitle != null) ...[
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                Icon(
+                                  user.icon,
+                                  size: 12,
+                                  color: user.iconColor,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  user.badgeTitle!,
+                                  style: WalletTextStyles.label,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+
+                    // Stats: Flame + Points
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '${user.points} pts',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: WalletColors.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.local_fire_department_rounded,
+                              size: 12,
+                              color: AppColors.streakOrange,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              '${user.streakDays}d streak',
+                              style: const TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.streakOrangeDeep,
+                              ),
+                            ),
                           ],
                         ),
-                        if (user.badgeTitle != null) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            user.badgeTitle!,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textSubtitle,
-                            ),
-                          ),
-                        ],
                       ],
                     ),
-                  ),
-
-                  // Stats: Flame + Points
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '${user.points} pts',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.primaryDarkBlue,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.local_fire_department_rounded,
-                            size: 12,
-                            color: AppColors.streakOrange,
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            '${user.streakDays}d streak',
-                            style: const TextStyle(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.streakOrangeDeep,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          );
-        }),
-      ],
-    );
+            );
+          }),
+        ],
+      );
+    });
   }
 }

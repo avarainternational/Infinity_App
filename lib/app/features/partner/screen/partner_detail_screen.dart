@@ -1,10 +1,13 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:infinity_wellness/app/constant/resources/app_colors.dart';
 import 'package:infinity_wellness/app/core/base/base_view.dart';
+import 'package:infinity_wellness/app/data/models/synergy_models.dart';
 import 'package:infinity_wellness/app/features/partner/controller/partner_detail_controller.dart';
 import 'package:infinity_wellness/app/features/partner/model/partner_detail_models.dart';
+import 'package:infinity_wellness/app/features/wallet/utility/wallet_ui_metrics.dart';
 
 class PartnerDetailScreen extends BaseView<PartnerDetailController> {
   const PartnerDetailScreen({super.key});
@@ -12,39 +15,43 @@ class PartnerDetailScreen extends BaseView<PartnerDetailController> {
   @override
   Widget buildView(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: WalletColors.background,
       appBar: _buildAppBar(context),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: AppColors.ambientGradientColors,
-          ),
-        ),
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(18, 10, 18, 40),
-          children: [
-            // 1. Partner Main Snapshot & Dynamic Gauge
-            _buildPartnerHeroCard(context),
-            const SizedBox(height: 18),
+        color: WalletColors.background,
+        child: Obx(() {
+          if (!controller.hasActivePartner.value) {
+            return _buildNoPartnerConnectedView(context);
+          }
 
-            // 2. Progress Bar Color Theme Selector (Warm, Love, Green, Energetic, Hot)
-            _buildColorThemeSelector(context),
-            const SizedBox(height: 18),
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 40),
+            children: [
+              // 1. Partner Main Snapshot & Dynamic Gauge
+              _buildPartnerHeroCard(context),
+              const SizedBox(height: WalletSpacing.md),
 
-            // 3. Past 3 Days Goal History
-            _buildPast3DaysSection(context),
-            const SizedBox(height: 18),
+              // 2. Quick Instant Partner Nudges (Hydrate / Screen Break / Boost)
+              _buildQuickNudgeActions(context),
+              const SizedBox(height: WalletSpacing.md),
 
-            // 4. Reminder Timeline (When did you remind him/her?)
-            _buildReminderTimelineSection(context),
-            const SizedBox(height: 18),
+              // 3. Progress Bar Color Theme Selector (Warm, Love, Green, Energetic, Hot)
+              _buildColorThemeSelector(context),
+              const SizedBox(height: WalletSpacing.md),
 
-            // 5. Water Intake Timeline (When did she/he drink water?)
-            _buildWaterIntakeSection(context),
-          ],
-        ),
+              // 4. Past 3 Days Goal History
+              _buildPast3DaysSection(context),
+              const SizedBox(height: WalletSpacing.md),
+
+              // 5. Reminder Timeline (When did you remind him/her?)
+              _buildReminderTimelineSection(context),
+              const SizedBox(height: WalletSpacing.md),
+
+              // 6. Water Intake Timeline (When did she/he drink water?)
+              _buildWaterIntakeSection(context),
+            ],
+          );
+        }),
       ),
     );
   }
@@ -86,6 +93,22 @@ class PartnerDetailScreen extends BaseView<PartnerDetailController> {
         ),
       ),
       actions: [
+        IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+              color: AppColors.cyanBadgeBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.person_add_rounded,
+              color: AppColors.primary,
+              size: 20,
+            ),
+          ),
+          onPressed: () => _showConnectPartnerDialog(context),
+          tooltip: 'Pair Partner Code',
+        ),
         Padding(
           padding: const EdgeInsets.only(right: 14),
           child: IconButton(
@@ -101,11 +124,81 @@ class PartnerDetailScreen extends BaseView<PartnerDetailController> {
                 size: 20,
               ),
             ),
-            onPressed: controller.sendNudge,
+            onPressed: () => controller.sendNudge(),
             tooltip: 'Nudge Partner',
           ),
         ),
       ],
+    );
+  }
+
+  void _showConnectPartnerDialog(BuildContext context) {
+    final textController = TextEditingController();
+
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.people_alt_rounded, color: AppColors.primary),
+            SizedBox(width: 8),
+            Text(
+              'Connect Partner',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Enter your partner\'s 6-character invite code to establish live 1-on-1 synergy:',
+              style: TextStyle(fontSize: 13, color: AppColors.textSlate, height: 1.4),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: textController,
+              textCapitalization: TextCapitalization.characters,
+              maxLength: 8,
+              decoration: InputDecoration(
+                hintText: 'e.g. INF789 or JAMIE1',
+                prefixIcon: const Icon(Icons.qr_code_rounded, color: AppColors.primary),
+                filled: true,
+                fillColor: AppColors.iceBlueBg,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: AppColors.iceBlueBorder),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: AppColors.iceBlueBorder),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () {
+              final code = textController.text.trim();
+              if (code.isNotEmpty) {
+                controller.connectPartnerWithCode(code);
+              }
+            },
+            child: const Text('Connect Pair'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -140,29 +233,69 @@ class PartnerDetailScreen extends BaseView<PartnerDetailController> {
         ),
         child: Column(
           children: [
-            // Top Badge: Synergy Streak
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: theme.accentColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.local_fire_department_rounded,
-                      color: theme.accentColor, size: 16),
-                  const SizedBox(width: 5),
-                  Text(
-                    '12-Day Synergy Streak Active',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                      color: theme.accentColor,
-                    ),
+            // Top Badges Row: Synergy Streak + Live Synced Status
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: theme.accentColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                ],
-              ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.local_fire_department_rounded,
+                          color: theme.accentColor, size: 15),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${controller.streakCount.value}-Day Synergy Streak',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
+                          color: theme.accentColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: controller.isLiveSynced.value
+                        ? AppColors.factGreenBg
+                        : AppColors.cyanBadgeBg,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        controller.isLiveSynced.value
+                            ? Icons.bolt_rounded
+                            : Icons.sync_rounded,
+                        size: 13,
+                        color: controller.isLiveSynced.value
+                            ? AppColors.factGreen
+                            : AppColors.primaryDarkBlue,
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        controller.isLiveSynced.value ? 'Live Synced' : '1-on-1 Pair',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                          color: controller.isLiveSynced.value
+                              ? AppColors.factGreen
+                              : AppColors.primaryDarkBlue,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
 
@@ -221,7 +354,116 @@ class PartnerDetailScreen extends BaseView<PartnerDetailController> {
   }
 
   // ---------------------------------------------------------------------------
-  // 2. Color Theme Selector (Warm, Love, Green, Energetic, Hot)
+  // 2. Quick Instant Partner Nudges
+  // ---------------------------------------------------------------------------
+  Widget _buildQuickNudgeActions(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.touch_app_rounded, color: AppColors.primary, size: 18),
+              SizedBox(width: 6),
+              Text(
+                'Instant Partner Nudges',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textDark,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildNudgeButton(
+                  title: '💧 Hydrate',
+                  color: const Color(0xFF00A3FF),
+                  bgColor: const Color(0xFFE0F7FF),
+                  onTap: () => controller.sendNudge(
+                    type: SynergyNudgeType.hydrate,
+                    customMessage: 'Time to drink fresh water 💧',
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildNudgeButton(
+                  title: '👀 Rest Eyes',
+                  color: const Color(0xFF10B981),
+                  bgColor: const Color(0xFFE6FDF4),
+                  onTap: () => controller.sendNudge(
+                    type: SynergyNudgeType.screenBreak,
+                    customMessage: 'Time for a 5-minute screen & eye break 👀',
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildNudgeButton(
+                  title: '🔥 Boost',
+                  color: const Color(0xFFFF6D00),
+                  bgColor: const Color(0xFFFFECE0),
+                  onTap: () => controller.sendNudge(
+                    type: SynergyNudgeType.cheer,
+                    customMessage: 'Keep our synergy streak burning bright! 🔥',
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNudgeButton({
+    required String title,
+    required Color color,
+    required Color bgColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Center(
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 3. Color Theme Selector (Warm, Love, Green, Energetic, Hot)
   // ---------------------------------------------------------------------------
   Widget _buildColorThemeSelector(BuildContext context) {
     return Container(
@@ -849,6 +1091,220 @@ class PartnerDetailScreen extends BaseView<PartnerDetailController> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildNoPartnerConnectedView(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+      children: [
+        // Hero Header Card
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppColors.iceBlueBorder, width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primary, AppColors.cyanGradientStart],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: const Center(
+                  child: Icon(Icons.favorite_rounded, color: Colors.white, size: 36),
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                '1-on-1 Friend Synergy',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textDark,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Pair with a best friend or partner for mutual hydration accountability, live synced dashboards, interactive nudges, and shared streaks.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSlate,
+                  height: 1.45,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+
+        // Your Invite Code Card
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.iceBlueBorder, width: 1.2),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'YOUR INVITE CODE',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.primary,
+                  letterSpacing: 1.0,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Obx(() {
+                final code = controller.userInviteCode.value.isNotEmpty
+                    ? controller.userInviteCode.value
+                    : 'INF123';
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.iceBlueBg,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.iceBlueBorder),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        code,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 3,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        icon: const Icon(Icons.copy_rounded, size: 16),
+                        label: const Text('Copy', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: code));
+                          Get.snackbar(
+                            'Code Copied! 📋',
+                            'Share your invite code $code with your partner.',
+                            snackPosition: SnackPosition.BOTTOM,
+                            duration: const Duration(seconds: 2),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+
+        // Connect with Partner Code Card
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.iceBlueBorder, width: 1.2),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'ENTER PARTNER CODE',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textDark,
+                  letterSpacing: 1.0,
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: controller.inviteInputController,
+                textCapitalization: TextCapitalization.characters,
+                maxLength: 8,
+                decoration: InputDecoration(
+                  hintText: 'Enter 6-char code (e.g. INF456)',
+                  prefixIcon: const Icon(Icons.link_rounded, color: AppColors.primary),
+                  filled: true,
+                  fillColor: AppColors.iceBlueBg,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: AppColors.iceBlueBorder),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: AppColors.iceBlueBorder),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  onPressed: () {
+                    final code = controller.inviteInputController.text.trim();
+                    if (code.isNotEmpty) {
+                      controller.connectPartnerWithCode(code);
+                    } else {
+                      Get.snackbar('Enter Code', 'Please enter your partner\'s invite code.');
+                    }
+                  },
+                  child: const Text(
+                    'Connect 1-on-1 Synergy',
+                    style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

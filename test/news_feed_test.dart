@@ -30,10 +30,9 @@ void main() {
       expect(controller.feedItems.length, greaterThanOrEqualTo(4));
 
       final firstItem = controller.feedItems.first;
-      expect(firstItem.title, contains('Can Drinking 3L of Water Cure Acne'));
-      expect(firstItem.bannerTag, equals('MYTH BUSTER'));
+      expect(firstItem.authorName, equals('M Travel'));
+      expect(firstItem.badgeText, equals('Promoted By'));
       expect(firstItem.bannerGradient.length, greaterThanOrEqualTo(2));
-      expect(firstItem.keyTakeaways, isNotEmpty);
       expect(controller.isExpanded(firstItem.id), isFalse);
     });
 
@@ -49,26 +48,24 @@ void main() {
       expect(controller.isExpanded(testId), isFalse);
     });
 
-    test('toggles helpful vote count and bookmark status', () {
+    test('toggles save and bookmark status', () {
       final controller = Get.put(FeedController());
       const testId = 'feed-1';
 
-      final initialHelpful = controller.getHelpfulCount(testId);
-      expect(controller.isHelpfulVoted(testId), isFalse);
+      final item = controller.feedItems.firstWhere((i) => i.id == testId);
+      expect(controller.isSaved(testId), isFalse);
+      controller.toggleSave(item);
+      expect(controller.isSaved(testId), isTrue);
+      controller.toggleSave(item);
+      expect(controller.isSaved(testId), isFalse);
+    });
 
-      controller.toggleHelpful(testId);
-      expect(controller.isHelpfulVoted(testId), isTrue);
-      expect(controller.getHelpfulCount(testId), equals(initialHelpful + 1));
-
-      controller.toggleHelpful(testId);
-      expect(controller.isHelpfulVoted(testId), isFalse);
-      expect(controller.getHelpfulCount(testId), equals(initialHelpful));
-
-      expect(controller.isBookmarked(testId), isFalse);
-      controller.toggleBookmark(testId);
-      expect(controller.isBookmarked(testId), isTrue);
-      controller.toggleBookmark(testId);
-      expect(controller.isBookmarked(testId), isFalse);
+    test('loads leaderboard users with premium vector icons and ranks', () {
+      final controller = Get.put(FeedController());
+      expect(controller.leaderboardUsers.length, greaterThanOrEqualTo(5));
+      expect(controller.leaderboardUsers.first.rank, equals(1));
+      expect(controller.leaderboardUsers.first.badgeTitle, equals('Hydration Deity'));
+      expect(controller.leaderboardUsers.first.icon, equals(Icons.workspace_premium_rounded));
     });
   });
 
@@ -115,6 +112,7 @@ void main() {
 
       Get.put(ShellController());
       final homeController = Get.put(HomeController());
+      homeController.homeFeedPosts.assignAll(FeedController.defaultFeedItems);
 
       await tester.pumpWidget(
         const GetMaterialApp(
@@ -125,13 +123,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Scroll to News & Challenges
+      // Scroll to News & Community Feed
       await tester.scrollUntilVisible(
-        find.text('News & Challenges'),
+        find.text('News & Community Feed'),
         200,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.text('News & Challenges'), findsOneWidget);
+      expect(find.text('News & Community Feed'), findsOneWidget);
 
       // Verify 16:9 card and images in home
       final aspectRatios = tester.widgetList<AspectRatio>(find.byType(AspectRatio));
@@ -172,7 +170,7 @@ void main() {
 
       // Verify quick mini-apps tiles and icons
       expect(find.text('News'), findsOneWidget);
-      expect(find.text('Hydration'), findsOneWidget);
+      expect(find.text('Hydration'), findsWidgets);
       expect(find.text('Synergy'), findsOneWidget);
       expect(find.text('More'), findsWidgets);
 
@@ -208,7 +206,8 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
 
-      Get.put(FeedController());
+      final controller = Get.put(FeedController());
+      controller.activeTab.value = SocialTab.challenges;
 
       await tester.pumpWidget(
         const GetMaterialApp(
@@ -219,10 +218,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Verify challenge titles & 16:9 AspectRatios (default first tab)
+      // Verify challenge titles & 16:9 AspectRatios
       expect(find.text('7-Day Smart Hydration Sprint'), findsOneWidget);
       expect(find.text('1-on-1 Synergy Streak Master'), findsOneWidget);
-      expect(find.text('Digital Screen-Break Habit'), findsOneWidget);
 
       final aspectRatios = tester.widgetList<AspectRatio>(find.byType(AspectRatio));
       expect(aspectRatios.any((ar) => (ar.aspectRatio - (16 / 9)).abs() < 0.01), isTrue);
@@ -254,9 +252,9 @@ void main() {
       expect(find.text('Kai Rivera'), findsOneWidget);
 
       // Verify YOU user highlighted entry
-      expect(find.text('You (Alex)'), findsOneWidget);
-      expect(find.text('YOU'), findsOneWidget);
-      expect(find.text('Rankings'), findsOneWidget);
+      expect(find.text('You (Infinity User)'), findsOneWidget);
+      expect(find.text('YOU'), findsWidgets);
+      expect(find.text('Rankings'), findsWidgets);
     });
   });
 
@@ -288,10 +286,10 @@ void main() {
       expect(find.text('Rewards & Gear'), findsOneWidget);
 
       // Verify mini-app titles
-      expect(find.text('Smart Hydration Reminder'), findsOneWidget);
-      expect(find.text('Friend Synergy (1-on-1)'), findsOneWidget);
-      expect(find.text('Medical News & Myths'), findsOneWidget);
-      expect(find.text('Wellness Rewards Shop'), findsOneWidget);
+      expect(find.text('Hydration'), findsOneWidget);
+      expect(find.text('Synergy'), findsOneWidget);
+      expect(find.text('News'), findsOneWidget);
+      expect(find.text('Shop'), findsOneWidget);
     });
   });
 

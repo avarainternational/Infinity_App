@@ -59,8 +59,14 @@ The bottom navigation bar provides frictionless access to the five main pillars:
 - **Mutual Nudge Controls**: Quick-action cards to send instant interactive nudges ("💧 Time to Hydrate", "👀 Screen Break Time").
 - **Realtime Sync Indicator**: Live pulse badge showing instant synchronization status via Supabase Realtime.
 
-## Accessibility & Responsiveness
-
-- Minimum touch target size of 48x48 dp for all buttons and interactive chips.
-- Support responsive layout scaling across compact and large mobile screens using `SafeArea` and scrollable containers.
 - Strong text contrast adhering to WCAG AA guidelines.
+
+## Ecosystem Wallet UI Specifications (Option 1 — Shadcn Design System)
+
+The Ecosystem Wallet follows the **Shadcn Design System** ([`wallet_system_design_options.md`](file:///Users/hlyanpaingaung/Desktop/Infinity%20Wellness/lib/app/features/wallet/docs/wallet_system_design_options/wallet_system_design_options.md)):
+
+- **Colors & Tokens**: Primary Royal Blue (`#2563EB`), Slate background (`#F8FAFC`), pure white elevated surfaces (`#FFFFFF`), crisp 1px borders (`#E2E8F0`), and soft level 1–3 shadows.
+- **Balance Card**: High-impact bold blue balance display (`{pts} pts`), star indicator, "+50 Daily Streak Active" emerald pill badge (`#16A34A`), and outlined "View History" button.
+- **Rewards Shop Card**: Soft cyan tinted card (`#F0F9FF` background, `#BAE6FD` border, `#0284C7` accent) directing to the full rewards catalog.
+- **Transfer & Receive Hub**: Segmented control with smooth active slider (`#2563EB` fill on `#F1F5F9` track), one-tap QR code display with mono Reward ID, and live inline camera scanner with reticle animation and clipboard paste fallback.
+

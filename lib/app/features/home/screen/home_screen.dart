@@ -1,10 +1,32 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:infinity_wellness/app/constant/resources/app_colors.dart';
+import 'package:infinity_wellness/app/constant/routing/app_route.dart';
 import 'package:infinity_wellness/app/core/base/base_view.dart';
+import 'package:infinity_wellness/app/features/feed/controller/feed_controller.dart';
 import 'package:infinity_wellness/app/features/home/controller/home_controller.dart';
 import 'package:infinity_wellness/app/features/shell/controller/shell_controller.dart';
+
+// -----------------------------------------------------------------------------
+// Improved Design Color Palette Constants
+// -----------------------------------------------------------------------------
+class HomeThemeColors {
+  HomeThemeColors._();
+
+  static const Color background = Color(0xFFE0F2FE);
+  static const Color backgroundTop = Color(0xFFD4EDFC);
+  static const Color backgroundMiddle = Color(0xFFE5F3FD);
+  static const Color backgroundBottom = Color(0xFFF1F8FE);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color border = Color(0xFFD6E6F7);
+  static const Color primaryBlue = Color(0xFF2563EB);
+  static const Color tealAccent = Color(0xFF14BBA6);
+  static const Color textPrimary = Color(0xFF172033);
+  static const Color textSecondary = Color(0xFF697386);
+  static const Color softAccentBg = Color(0xFFE6F7F5);
+  static const Color softBlueBg = Color(0xFFEBF3FF);
+  static const Color softGrayButton = Color(0xFFF1F5F9);
+}
 
 class HomeScreen extends BaseView<HomeController> {
   const HomeScreen({super.key});
@@ -13,40 +35,74 @@ class HomeScreen extends BaseView<HomeController> {
   Widget buildView(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
+        color: HomeThemeColors.background,
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: AppColors.ambientGradientColors,
+          colors: [
+            HomeThemeColors.backgroundTop,
+            HomeThemeColors.backgroundMiddle,
+            HomeThemeColors.backgroundBottom,
+          ],
+          stops: [0.0, 0.40, 1.0],
         ),
       ),
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 14, 18, 110),
-        children: [
-          // 1. Top Profile Greeting & Notification Notice
-          _buildTopHeader(context),
-          const SizedBox(height: 16),
+      child: SafeArea(
+        bottom: false,
+        child: RefreshIndicator(
+          onRefresh: controller.refreshHomeFeed,
+          color: HomeThemeColors.primaryBlue,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
+            children: [
+              // 1. Top Header: Greeting, User Avatar, Date, Bell
+              _buildTopHeader(context),
+              const SizedBox(height: 14),
 
-          // 2. Main Card: Calendar + Hydration Meter (You & Partners)
-          _buildMainHydrationCard(context),
-          const SizedBox(height: 16),
+              // 2. Standalone Date Selector Card
+              _buildDateSelectorCard(context),
+              const SizedBox(height: 18),
 
-          // 3. Middle Sticker Banner: Drink Water Illustration Card
-          _buildDrinkWaterStickerBanner(context),
-          const SizedBox(height: 16),
+              // 3. "Today's overview" Section Header
+              const Text(
+                "Today's overview",
+                style: TextStyle(
+                  fontSize: 16.5,
+                  fontWeight: FontWeight.w800,
+                  color: HomeThemeColors.textPrimary,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const SizedBox(height: 12),
 
-          // 4. Quick Mini-Apps Card
-          _buildQuickMiniAppsCard(context),
-          const SizedBox(height: 20),
+              // 4. Separated Card: Hydration with Curve Indicator
+              _buildHydrationCard(context),
+              const SizedBox(height: 14),
 
-          // 5. News and Challenges Section
-          _buildNewsAndChallengesSection(context),
-        ],
+              // 5. Separated Card: Friend Synergy
+              _buildFriendSynergyCard(context),
+              const SizedBox(height: 20),
+
+              // 6. "Wellness for you" Section Header & Banner Carousel
+              _buildWellnessForYouSection(context),
+              const SizedBox(height: 20),
+
+              // 7. Quick Mini-Apps Card
+              _buildQuickMiniAppsCard(context),
+              const SizedBox(height: 20),
+
+              // 8. News & Community Feed Section
+              _buildNewsAndChallengesSection(context),
+            ],
+          ),
+        ),
       ),
     );
   }
 
   // ---------------------------------------------------------------------------
-  // Top Header: Greeting, Avatar, Age/Gender, Bell with Red 9+ Badge
+  // 1. Top Header: Cleaner Header (Good evening, Hlyan 👋 / Date / Bell)
   // ---------------------------------------------------------------------------
   Widget _buildTopHeader(BuildContext context) {
     return Obx(() {
@@ -57,61 +113,73 @@ class HomeScreen extends BaseView<HomeController> {
           Expanded(
             child: Row(
               children: [
-                // Avatar (Circular with pale cyan/mint background & silhouette)
+                // Squircle User Avatar
                 Container(
-                  width: 52,
-                  height: 52,
-                  decoration: const BoxDecoration(
-                    color: AppColors.mintSoft,
-                    shape: BoxShape.circle,
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: HomeThemeColors.border,
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: Center(
                     child: controller.avatarUrl.value.isNotEmpty
-                        ? ClipOval(
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(13),
                             child: Image.network(
                               controller.avatarUrl.value,
-                              width: 52,
-                              height: 52,
+                              width: 46,
+                              height: 46,
                               fit: BoxFit.cover,
                               errorBuilder: (_, __, ___) => const Icon(
                                 Icons.person_rounded,
-                                size: 34,
-                                color: AppColors.textLight,
+                                size: 26,
+                                color: HomeThemeColors.primaryBlue,
                               ),
                             ),
                           )
                         : const Icon(
                             Icons.person_rounded,
-                            size: 34,
-                            color: AppColors.textLight,
+                            size: 26,
+                            color: HomeThemeColors.primaryBlue,
                           ),
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Greeting & User Profile info
+                // Greeting & Date
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        'Have a nice day!',
-                        style: TextStyle(
-                          fontSize: 20,
+                      Text(
+                        controller.greetingText,
+                        style: const TextStyle(
+                          fontSize: 16,
                           fontWeight: FontWeight.w800,
-                          color: AppColors.textDark,
-                          letterSpacing: -0.4,
+                          color: HomeThemeColors.textPrimary,
+                          letterSpacing: -0.3,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${controller.userName.value} -Age ${controller.userAge.value}/${controller.userGender.value}',
+                        controller.formattedCurrentDate,
                         style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSubtitle,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w500,
+                          color: HomeThemeColors.textSecondary,
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
@@ -120,7 +188,7 @@ class HomeScreen extends BaseView<HomeController> {
             ),
           ),
           const SizedBox(width: 8),
-          // Notification Bell Notice with red badge on top-left
+          // Circular Notification Bell Button
           GestureDetector(
             onTap: () {
               Get.snackbar(
@@ -130,45 +198,61 @@ class HomeScreen extends BaseView<HomeController> {
                 duration: const Duration(seconds: 2),
               );
             },
-            child: SizedBox(
-              width: 44,
-              height: 44,
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: HomeThemeColors.surface,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: HomeThemeColors.border,
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
                   const Center(
                     child: Icon(
                       Icons.notifications_none_rounded,
-                      size: 30,
-                      color: AppColors.textMuted,
+                      size: 21,
+                      color: HomeThemeColors.textPrimary,
                     ),
                   ),
-                  Positioned(
-                    top: 2,
-                    left: 2,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppColors.redBadge,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.surface, width: 1.5),
-                      ),
-                      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-                      child: Center(
-                        child: Text(
-                          controller.notificationCount.value > 9
-                              ? '9+'
-                              : '${controller.notificationCount.value}',
-                          style: const TextStyle(
-                            color: AppColors.surface,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w800,
-                            height: 1,
+                  if (controller.notificationCount.value > 0)
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEF4444),
+                          borderRadius: BorderRadius.circular(99),
+                          border: Border.all(color: HomeThemeColors.surface, width: 1.5),
+                        ),
+                        constraints: const BoxConstraints(minWidth: 15, minHeight: 15),
+                        child: Center(
+                          child: Text(
+                            controller.notificationCount.value > 9
+                                ? '9+'
+                                : '${controller.notificationCount.value}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w800,
+                              height: 1,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -179,166 +263,358 @@ class HomeScreen extends BaseView<HomeController> {
   }
 
   // ---------------------------------------------------------------------------
-  // Main Card: Calendar + Hydration Meter (You & Partners)
+  // 2. Standalone Date Selector Card
   // ---------------------------------------------------------------------------
-  Widget _buildMainHydrationCard(BuildContext context) {
+  Widget _buildDateSelectorCard(BuildContext context) {
+    final dates = controller.dateList;
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(26),
+        color: HomeThemeColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: HomeThemeColors.border, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: SizedBox(
+              height: 56,
+              child: Obx(() {
+                final selected = controller.selectedDate.value;
+                return ListView.separated(
+                  controller: controller.calendarScrollController,
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: dates.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 6),
+                  itemBuilder: (context, index) {
+                    final date = dates[index];
+                    final isSelected = date.year == selected.year &&
+                        date.month == selected.month &&
+                        date.day == selected.day;
+                    final weekdayStr = controller.getWeekdayShort(date.weekday).toUpperCase();
+
+                    return GestureDetector(
+                      onTap: () => controller.selectDate(date),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 44,
+                        decoration: BoxDecoration(
+                          color: isSelected ? HomeThemeColors.softBlueBg : Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          border: isSelected
+                              ? Border.all(color: HomeThemeColors.primaryBlue, width: 1.2)
+                              : null,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '${date.day}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: isSelected
+                                    ? HomeThemeColors.primaryBlue
+                                    : HomeThemeColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              weekdayStr,
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w700,
+                                color: isSelected
+                                    ? HomeThemeColors.primaryBlue
+                                    : HomeThemeColors.textSecondary,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }),
+            ),
+          ),
+          const SizedBox(width: 6),
+          // Calendar Picker Button
+          GestureDetector(
+            onTap: () async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: controller.selectedDate.value,
+                firstDate: DateTime.now().subtract(const Duration(days: 90)),
+                lastDate: DateTime.now().add(const Duration(days: 90)),
+              );
+              if (picked != null) {
+                controller.selectDate(picked);
+              }
+            },
+            child: Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: HomeThemeColors.softGrayButton,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: HomeThemeColors.border),
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.calendar_today_outlined,
+                  size: 16,
+                  color: HomeThemeColors.textPrimary,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 4. Separated Card: Hydration (With Curve Progress Bar Gauge)
+  // ---------------------------------------------------------------------------
+  Widget _buildHydrationCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: HomeThemeColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: HomeThemeColors.border, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Obx(() {
+        final current = controller.currentWaterMl.value;
+        final goal = controller.dailyGoalMl.value;
+        final progress = controller.hydrationProgress;
+        final percent = controller.hydrationPercentage;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top Row: Title + Circular Water Droplet Badge
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Hydration',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: HomeThemeColors.textPrimary,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: const BoxDecoration(
+                    color: HomeThemeColors.softBlueBg,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.water_drop_rounded,
+                      color: HomeThemeColors.primaryBlue,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            // Semicircle Speedometer Curve Progress Bar Indicator (Kept as requested)
+            Center(
+              child: HydrationGauge(
+                progress: progress,
+                percent: percent,
+                gradientColors: controller.userTheme.gradient,
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // Intake / Goal Display
+            Center(
+              child: Text(
+                '${_formatNumber(current)} / ${_formatNumber(goal)} ml',
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                  color: HomeThemeColors.textSecondary,
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // View Details Button (Full Width Clean Gray Button)
+            GestureDetector(
+              onTap: controller.viewHydrationDetails,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 11),
+                decoration: BoxDecoration(
+                  color: HomeThemeColors.softGrayButton,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: HomeThemeColors.border,
+                    width: 1,
+                  ),
+                ),
+                child: const Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'View details',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: HomeThemeColors.textPrimary,
+                        ),
+                      ),
+                      SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 14,
+                        color: HomeThemeColors.textPrimary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      }),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 5. Separated Card: Friend Synergy
+  // ---------------------------------------------------------------------------
+  Widget _buildFriendSynergyCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: HomeThemeColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: HomeThemeColors.border, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Horizontal Scrollable Calendar Strip
-          _buildHorizontalCalendar(context),
-          const SizedBox(height: 16),
-
-          // 2. Section Header: Droplet icon in cyan box + "Hydration Meter"
+          // Top Row: Title, Subtitle + Soft Teal People Badge
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: AppColors.cyanBadgeBg,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.water_drop_rounded,
-                  color: AppColors.primary,
-                  size: 18,
-                ),
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Friend Synergy',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: HomeThemeColors.textPrimary,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  SizedBox(height: 3),
+                  Text(
+                    'Stay motivated together',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
+                      color: HomeThemeColors.textSecondary,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              const Text(
-                'Hydration Meter',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textDark,
+              Container(
+                width: 38,
+                height: 38,
+                decoration: const BoxDecoration(
+                  color: HomeThemeColors.softAccentBg,
+                  shape: BoxShape.circle,
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.groups_rounded,
+                    color: HomeThemeColors.tealAccent,
+                    size: 21,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 14),
 
-          // 3. "You" Subsection
-          const Text(
-            'You',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textDark,
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // Semicircle Speedometer Gauge (You)
+          // Partner Status Row
           Obx(() {
-            final current = controller.currentWaterMl.value;
-            final goal = controller.dailyGoalMl.value;
-            final progress = controller.hydrationProgress;
-            final percent = controller.hydrationPercentage;
-
-            return Column(
-              children: [
-                Center(
-                  child: HydrationGauge(
-                    progress: progress,
-                    percent: percent,
-                    gradientColors: controller.userTheme.gradient,
+            if (controller.partners.isEmpty) {
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'No partner connected',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: HomeThemeColors.textPrimary,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Total Intake',
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSlate,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      '$current / $goal ml',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textDark,
+                  FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: HomeThemeColors.tealAccent,
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    onPressed: () => Get.toNamed(Routes.partnerDetail),
+                    child: const Text(
+                      'Connect',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
                       ),
                     ),
-                    GestureDetector(
-                      onTap: controller.viewHydrationDetails,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 7),
-                        decoration: BoxDecoration(
-                          color: AppColors.cyanPillBg,
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                            color: AppColors.cyanPillBorder,
-                            width: 1,
-                          ),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'view details',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textSubtitle,
-                              ),
-                            ),
-                            SizedBox(width: 4),
-                            Icon(
-                              Icons.arrow_forward_ios_rounded,
-                              size: 10,
-                              color: AppColors.textSubtitle,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            );
-          }),
+                  ),
+                ],
+              );
+            }
 
-          const SizedBox(height: 14),
-          const Divider(height: 1, thickness: 1, color: AppColors.divider),
-          const SizedBox(height: 14),
-
-          // 4. "Partners" Subsection
-          const Text(
-            'Partners',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textDark,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Horizontal Partners List
-          Obx(() {
             return Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 ...controller.partners.map((partner) {
                   return Expanded(
@@ -350,18 +626,19 @@ class HomeScreen extends BaseView<HomeController> {
                 }),
                 // Add partner '+' button
                 GestureDetector(
-                  onTap: controller.addPartner,
+                  onTap: () => Get.toNamed(Routes.partnerDetail),
                   child: Container(
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      color: AppColors.cyanToggleBg,
-                      borderRadius: BorderRadius.circular(10),
+                      color: HomeThemeColors.softGrayButton,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: HomeThemeColors.border),
                     ),
                     child: const Center(
                       child: Icon(
                         Icons.add_rounded,
-                        color: AppColors.primaryDarkBlue,
+                        color: HomeThemeColors.tealAccent,
                         size: 22,
                       ),
                     ),
@@ -376,7 +653,7 @@ class HomeScreen extends BaseView<HomeController> {
   }
 
   // ---------------------------------------------------------------------------
-  // Partner Gauge Item (e.g. Wifey❤️ or Bob)
+  // Partner Gauge Item
   // ---------------------------------------------------------------------------
   Widget _buildPartnerGaugeItem(BuildContext context, SynergyPartner partner) {
     return Obx(() {
@@ -388,7 +665,7 @@ class HomeScreen extends BaseView<HomeController> {
             style: const TextStyle(
               fontSize: 12.5,
               fontWeight: FontWeight.w700,
-              color: AppColors.textDark,
+              color: HomeThemeColors.textPrimary,
             ),
           ),
           const SizedBox(height: 4),
@@ -404,17 +681,18 @@ class HomeScreen extends BaseView<HomeController> {
               GestureDetector(
                 onTap: () => controller.notifyPartner(partner),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.cyanPillBg,
-                    borderRadius: BorderRadius.circular(14),
+                    color: HomeThemeColors.softGrayButton,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: HomeThemeColors.border),
                   ),
                   child: const Text(
                     'notify',
                     style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textSubtitle,
+                      color: HomeThemeColors.tealAccent,
                     ),
                   ),
                 ),
@@ -423,10 +701,11 @@ class HomeScreen extends BaseView<HomeController> {
               GestureDetector(
                 onTap: () => controller.viewPartner(partner),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.cyanPillBg,
-                    borderRadius: BorderRadius.circular(14),
+                    color: HomeThemeColors.softGrayButton,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: HomeThemeColors.border),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
@@ -436,11 +715,11 @@ class HomeScreen extends BaseView<HomeController> {
                         style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textSubtitle,
+                          color: HomeThemeColors.textSecondary,
                         ),
                       ),
                       SizedBox(width: 2),
-                      Icon(Icons.edit_rounded, size: 10, color: AppColors.textMuted),
+                      Icon(Icons.edit_rounded, size: 10, color: HomeThemeColors.textSecondary),
                     ],
                   ),
                 ),
@@ -453,116 +732,27 @@ class HomeScreen extends BaseView<HomeController> {
   }
 
   // ---------------------------------------------------------------------------
-  // Horizontal Calendar Strip
+  // 6. "Wellness for you" Section Header & Carousel
   // ---------------------------------------------------------------------------
-  Widget _buildHorizontalCalendar(BuildContext context) {
-    final dates = controller.dateList;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
+  Widget _buildWellnessForYouSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: SizedBox(
-            height: 60,
-            child: Obx(() {
-              final selected = controller.selectedDate.value;
-              return ListView.separated(
-                controller: controller.calendarScrollController,
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                itemCount: dates.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (context, index) {
-                  final date = dates[index];
-                  final isSelected = date.year == selected.year &&
-                      date.month == selected.month &&
-                      date.day == selected.day;
-                  final weekdayStr = controller.getWeekdayShort(date.weekday);
-
-                  return GestureDetector(
-                    onTap: () => controller.selectDate(date),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: 46,
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppColors.cyanActiveChip
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(16),
-                        border: isSelected
-                            ? Border.all(color: AppColors.primary, width: 1.4)
-                            : null,
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '${date.day}',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                              color: isSelected
-                                  ? AppColors.textDark
-                                  : AppColors.calendarDate,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            weekdayStr,
-                            style: TextStyle(
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w700,
-                              color: isSelected
-                                  ? AppColors.textDark
-                                  : AppColors.calendarWeekday,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              );
-            }),
+        const Text(
+          'Wellness for you',
+          style: TextStyle(
+            fontSize: 16.5,
+            fontWeight: FontWeight.w800,
+            color: HomeThemeColors.textPrimary,
+            letterSpacing: -0.3,
           ),
         ),
-        const SizedBox(width: 8),
-        // Calendar Picker Icon Button
-        GestureDetector(
-          onTap: () async {
-            final picked = await showDatePicker(
-              context: context,
-              initialDate: controller.selectedDate.value,
-              firstDate: DateTime.now().subtract(const Duration(days: 90)),
-              lastDate: DateTime.now().add(const Duration(days: 90)),
-            );
-            if (picked != null) {
-              controller.selectDate(picked);
-            }
-          },
-          child: Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Center(
-              child: Icon(
-                Icons.calendar_today_outlined,
-                size: 22,
-                color: AppColors.textDark,
-              ),
-            ),
-          ),
-        ),
+        const SizedBox(height: 12),
+        _buildDrinkWaterStickerBanner(context),
       ],
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Wellness, Hydration Habits & Sponsored Ads Banner Carousel
-  // ---------------------------------------------------------------------------
   Widget _buildDrinkWaterStickerBanner(BuildContext context) {
     return Obx(() {
       final banners = controller.banners;
@@ -585,7 +775,7 @@ class HomeScreen extends BaseView<HomeController> {
             ),
           ),
           const SizedBox(height: 8),
-          // Sleek animated indicator dots
+          // Animated indicator dots
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(banners.length, (index) {
@@ -594,11 +784,11 @@ class HomeScreen extends BaseView<HomeController> {
                 duration: const Duration(milliseconds: 250),
                 margin: const EdgeInsets.symmetric(horizontal: 3),
                 height: 5,
-                width: isSelected ? 20 : 6,
+                width: isSelected ? 18 : 5,
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppColors.primary
-                      : AppColors.textLight.withValues(alpha: 0.35),
+                      ? HomeThemeColors.primaryBlue
+                      : HomeThemeColors.border,
                   borderRadius: BorderRadius.circular(4),
                 ),
               );
@@ -620,20 +810,19 @@ class HomeScreen extends BaseView<HomeController> {
             end: Alignment.bottomRight,
             colors: banner.gradientColors,
           ),
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: banner.gradientColors.last.withValues(alpha: 0.3),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
+              color: banner.gradientColors.last.withValues(alpha: 0.25),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(20),
           child: Stack(
             children: [
-              // Ambient background decorative glow circles
               Positioned(
                 right: -20,
                 bottom: -20,
@@ -646,38 +835,23 @@ class HomeScreen extends BaseView<HomeController> {
                   ),
                 ),
               ),
-              Positioned(
-                right: 50,
-                top: -30,
-                child: Container(
-                  width: 90,
-                  height: 90,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.06),
-                  ),
-                ),
-              ),
-              // Content Row
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 14, 12),
                 child: Row(
                   children: [
-                    // Left Text Block
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Tag Badge
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
+                              horizontal: 7,
+                              vertical: 2.5,
                             ),
                             decoration: BoxDecoration(
                               color: banner.tagBgColor,
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
                               banner.tag,
@@ -689,12 +863,11 @@ class HomeScreen extends BaseView<HomeController> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 6),
-                          // Title
+                          const SizedBox(height: 5),
                           Text(
                             banner.title,
                             style: const TextStyle(
-                              fontSize: 15,
+                              fontSize: 14.5,
                               fontWeight: FontWeight.w800,
                               color: Colors.white,
                               letterSpacing: -0.2,
@@ -703,12 +876,11 @@ class HomeScreen extends BaseView<HomeController> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 4),
-                          // Subtitle description
+                          const SizedBox(height: 3),
                           Text(
                             banner.subtitle,
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: 10.5,
                               fontWeight: FontWeight.w500,
                               color: Colors.white.withValues(alpha: 0.92),
                               height: 1.25,
@@ -720,14 +892,13 @@ class HomeScreen extends BaseView<HomeController> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    // Right Visual Icon + CTA Button
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Container(
-                          width: 38,
-                          height: 38,
+                          width: 36,
+                          height: 36,
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
@@ -740,7 +911,7 @@ class HomeScreen extends BaseView<HomeController> {
                             child: Icon(
                               banner.icon,
                               color: Colors.white,
-                              size: 22,
+                              size: 20,
                             ),
                           ),
                         ),
@@ -752,7 +923,7 @@ class HomeScreen extends BaseView<HomeController> {
                           ),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(99),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withValues(alpha: 0.12),
@@ -794,19 +965,20 @@ class HomeScreen extends BaseView<HomeController> {
   }
 
   // ---------------------------------------------------------------------------
-  // Quick Mini-Apps Card
+  // 7. Quick Mini-Apps Card
   // ---------------------------------------------------------------------------
   Widget _buildQuickMiniAppsCard(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(24),
+        color: HomeThemeColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: HomeThemeColors.border, width: 1.0),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -821,12 +993,12 @@ class HomeScreen extends BaseView<HomeController> {
                   Container(
                     padding: const EdgeInsets.all(5),
                     decoration: BoxDecoration(
-                      color: AppColors.cyanBadgeBg,
-                      borderRadius: BorderRadius.circular(8),
+                      color: HomeThemeColors.softBlueBg,
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: const Icon(
                       Icons.grid_view_rounded,
-                      color: AppColors.primary,
+                      color: HomeThemeColors.primaryBlue,
                       size: 16,
                     ),
                   ),
@@ -834,9 +1006,9 @@ class HomeScreen extends BaseView<HomeController> {
                   const Text(
                     'Quick miniapps',
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textDark,
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w700,
+                      color: HomeThemeColors.textPrimary,
                     ),
                   ),
                 ],
@@ -850,14 +1022,14 @@ class HomeScreen extends BaseView<HomeController> {
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primaryVibrant,
+                        color: HomeThemeColors.primaryBlue,
                       ),
                     ),
                     SizedBox(width: 2),
                     Icon(
                       Icons.arrow_forward_ios_rounded,
                       size: 11,
-                      color: AppColors.primaryVibrant,
+                      color: HomeThemeColors.primaryBlue,
                     ),
                   ],
                 ),
@@ -871,25 +1043,25 @@ class HomeScreen extends BaseView<HomeController> {
               _buildQuickMiniAppItem(
                 title: 'News',
                 icon: Icons.article_rounded,
-                color: const Color(0xFF6200EE),
+                color: const Color(0xFF2563EB),
                 onTap: () => controller.openMiniApp('medical-news'),
               ),
               _buildQuickMiniAppItem(
                 title: 'Hydration',
                 icon: Icons.water_drop_rounded,
-                color: const Color(0xFF00A3FF),
+                color: const Color(0xFF0284C7),
                 onTap: () => controller.openMiniApp('smart-hydration'),
               ),
               _buildQuickMiniAppItem(
                 title: 'Synergy',
                 icon: Icons.people_alt_rounded,
-                color: const Color(0xFF005C99),
+                color: const Color(0xFF0D9488),
                 onTap: () => controller.openMiniApp('friend-synergy'),
               ),
               _buildQuickMiniAppItem(
                 title: 'More',
                 icon: Icons.grid_view_rounded,
-                color: AppColors.primaryVibrant,
+                color: HomeThemeColors.primaryBlue,
                 onTap: () => controller.openMiniAppsTab(),
               ),
             ],
@@ -905,7 +1077,7 @@ class HomeScreen extends BaseView<HomeController> {
     required VoidCallback onTap,
     Color? color,
   }) {
-    final itemColor = color ?? AppColors.primary;
+    final itemColor = color ?? HomeThemeColors.primaryBlue;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -916,41 +1088,34 @@ class HomeScreen extends BaseView<HomeController> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
-              width: 50,
-              height: 50,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
                 color: itemColor.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: itemColor.withValues(alpha: 0.20),
+                  color: itemColor.withValues(alpha: 0.18),
                   width: 1,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: itemColor.withValues(alpha: 0.06),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
               child: Center(
                 child: Icon(
                   icon,
                   color: itemColor,
-                  size: 24,
+                  size: 23,
                 ),
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 5),
             Text(
               title,
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 11.5,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textDark,
+                color: HomeThemeColors.textPrimary,
               ),
             ),
           ],
@@ -960,7 +1125,7 @@ class HomeScreen extends BaseView<HomeController> {
   }
 
   // ---------------------------------------------------------------------------
-  // News and Challenges Section
+  // 8. News & Community Feed Section
   // ---------------------------------------------------------------------------
   Widget _buildNewsAndChallengesSection(BuildContext context) {
     return Column(
@@ -972,32 +1137,30 @@ class HomeScreen extends BaseView<HomeController> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(6),
+                  padding: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
-                    color: AppColors.cyanBadgeBg,
-                    borderRadius: BorderRadius.circular(10),
+                    color: HomeThemeColors.softBlueBg,
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Icon(
                     Icons.article_rounded,
-                    color: AppColors.primaryDarkBlue,
-                    size: 18,
+                    color: HomeThemeColors.primaryBlue,
+                    size: 16,
                   ),
                 ),
                 const SizedBox(width: 8),
                 const Text(
-                  'News & Challenges',
+                  'News & Community Feed',
                   style: TextStyle(
-                    fontSize: 16.5,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textDark,
-                    letterSpacing: -0.3,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w700,
+                    color: HomeThemeColors.textPrimary,
                   ),
                 ),
               ],
             ),
             GestureDetector(
               onTap: () {
-                // Navigate to Social / Feed Tab in Shell
                 Get.find<ShellController>().selectTab(1);
               },
               child: const Row(
@@ -1005,137 +1168,449 @@ class HomeScreen extends BaseView<HomeController> {
                   Text(
                     'View All Feed',
                     style: TextStyle(
-                      fontSize: 12.5,
+                      fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.primaryVibrant,
+                      color: HomeThemeColors.primaryBlue,
                     ),
                   ),
                   SizedBox(width: 3),
                   Icon(
                     Icons.arrow_forward_ios_rounded,
-                    size: 12,
-                    color: AppColors.primaryVibrant,
+                    size: 11,
+                    color: HomeThemeColors.primaryBlue,
                   ),
                 ],
               ),
             ),
           ],
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         Obx(() {
-          return Column(
-            children: controller.newsAndChallenges.map((item) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.10),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: item.imageAsset != null
-                          ? Image.asset(
-                              item.imageAsset!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  _buildHomeFallbackNewsGraphic(item),
-                            )
-                          : _buildHomeFallbackNewsGraphic(item),
+          if (controller.isLoadingFeed.value) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 30),
+              child: Center(
+                child: CircularProgressIndicator(color: HomeThemeColors.primaryBlue),
+              ),
+            );
+          }
+
+          final posts = controller.homeFeedPosts;
+          if (posts.isEmpty) {
+            return Container(
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+              decoration: BoxDecoration(
+                color: HomeThemeColors.surface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: HomeThemeColors.border),
+              ),
+              child: Column(
+                children: [
+                  const Icon(Icons.feed_outlined, size: 36, color: HomeThemeColors.textSecondary),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'No News Posts Yet',
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w700,
+                      color: HomeThemeColors.textPrimary,
                     ),
                   ),
-                ),
-              );
-            }).toList(),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Add rows to feed_posts in Supabase or pull down to refresh.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: HomeThemeColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: () => controller.refreshHomeFeed(),
+                    icon: const Icon(Icons.refresh_rounded, size: 15),
+                    label: const Text('Refresh', style: TextStyle(fontSize: 12.5)),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: HomeThemeColors.primaryBlue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return Column(
+            children: posts.map((item) => _buildHomeFeedCard(context, item)).toList(),
           );
         }),
       ],
     );
   }
 
-  Widget _buildHomeFallbackNewsGraphic(HomeFeedCardItem item) {
-    return Stack(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: item.bannerGradient,
-            ),
+  Widget _buildHomeFeedCard(BuildContext context, FeedItem item) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: HomeThemeColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: HomeThemeColors.border, width: 1.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
-        ),
-        Positioned(
-          left: -25,
-          top: -25,
-          child: Container(
-            width: 110,
-            height: 110,
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. Author & Tag Header Row
+          _buildHomePostAuthorHeader(context, item),
+
+          // 2. Caption / Post Body Text (Top of Graphic - Facebook Style)
+          if (item.caption.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 2, 14, 10),
+              child: Text(
+                item.caption,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: HomeThemeColors.textPrimary,
+                  height: 1.4,
+                  letterSpacing: -0.1,
+                ),
+              ),
+            ),
+
+          // 3. 16:9 Visual Graphic Banner
+          _buildHomePostBannerGraphic(context, item),
+
+          // 4. Action Row (Timestamp, Save, Share)
+          _buildHomePostActionRow(context, item),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHomePostAuthorHeader(BuildContext context, FeedItem item) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 12, 10),
+      child: Row(
+        children: [
+          // Author Avatar Circle
+          Container(
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.16),
+              color: HomeThemeColors.softBlueBg,
+              border: Border.all(color: HomeThemeColors.border, width: 1.2),
             ),
-          ),
-        ),
-        Positioned(
-          right: -10,
-          bottom: -5,
-          child: Icon(
-            item.icon,
-            size: 120,
-            color: Colors.white.withValues(alpha: 0.15),
-          ),
-        ),
-        Positioned.fill(
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                stops: const [0.0, 0.30, 0.65, 1.0],
-                colors: [
-                  Colors.black.withValues(alpha: 0.04),
-                  Colors.black.withValues(alpha: 0.22),
-                  Colors.black.withValues(alpha: 0.68),
-                  Colors.black.withValues(alpha: 0.90),
-                ],
+            child: Center(
+              child: Text(
+                item.authorAvatarText,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w900,
+                  color: HomeThemeColors.primaryBlue,
+                ),
               ),
             ),
           ),
-        ),
-        Positioned(
-          left: 16,
-          right: 16,
-          bottom: 16,
-          child: Text(
-            item.title,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-              height: 1.28,
-              letterSpacing: -0.2,
-              shadows: [
-                Shadow(
-                  color: Color(0xDD000000),
-                  offset: Offset(0, 1.5),
-                  blurRadius: 8,
+          const SizedBox(width: 10),
+
+          // Author Name & Badge
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        item.authorName,
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                          color: HomeThemeColors.textPrimary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      size: 14,
+                      color: HomeThemeColors.primaryBlue,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: HomeThemeColors.softBlueBg,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    item.badgeText,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: HomeThemeColors.primaryBlue,
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
+
+          // 3-Dots Action Menu
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_horiz_rounded, color: HomeThemeColors.textSecondary, size: 20),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            onSelected: (val) {
+              if (val == 'save') {
+                controller.toggleSave(item);
+              } else if (val == 'share') {
+                controller.sharePost(item);
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'save',
+                child: Row(
+                  children: [
+                    Icon(
+                      controller.isSaved(item.id) ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                      size: 17,
+                      color: HomeThemeColors.primaryBlue,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(controller.isSaved(item.id) ? 'Remove Bookmark' : 'Save Bookmark'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'share',
+                child: Row(
+                  children: [
+                    Icon(Icons.share_outlined, size: 17, color: HomeThemeColors.textSecondary),
+                    SizedBox(width: 10),
+                    Text('Share Post'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHomePostBannerGraphic(BuildContext context, FeedItem item) {
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (item.imageUrl != null && item.imageUrl!.isNotEmpty)
+            Image.network(
+              item.imageUrl!,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  color: HomeThemeColors.softGrayButton,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                          : null,
+                      strokeWidth: 2,
+                      color: HomeThemeColors.primaryBlue,
+                    ),
+                  ),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) =>
+                  _buildHomeFallbackBanner(item),
+            )
+          else if (item.imageAsset != null && item.imageAsset!.isNotEmpty)
+            Image.asset(
+              item.imageAsset!,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) =>
+                  _buildHomeFallbackBanner(item),
+            )
+          else
+            _buildHomeFallbackBanner(item),
+
+          if (item.priceTag != null)
+            Positioned(
+              top: 12,
+              right: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF4444),
+                  borderRadius: BorderRadius.circular(6),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 6,
+                    ),
+                  ],
+                ),
+                child: Text(
+                  item.priceTag!,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+
+          if (item.badgeOverlayText != null)
+            Positioned(
+              left: 0,
+              bottom: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.black.withValues(alpha: 0.75),
+                      Colors.transparent,
+                    ],
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                  ),
+                ),
+                child: Text(
+                  item.badgeOverlayText!,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHomeFallbackBanner(FeedItem item) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: item.bannerGradient,
         ),
-      ],
+      ),
+      child: Center(
+        child: Icon(
+          item.bannerIcon,
+          size: 56,
+          color: Colors.white.withValues(alpha: 0.3),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHomePostActionRow(BuildContext context, FeedItem item) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+      child: Row(
+        children: [
+          Text(
+            item.timeAgo,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: HomeThemeColors.textSecondary,
+            ),
+          ),
+          const Spacer(),
+
+          Obx(() {
+            final isSaved = controller.isSaved(item.id);
+            return _buildHomeActionButton(
+              icon: isSaved ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
+              label: 'Save',
+              iconColor: isSaved ? HomeThemeColors.primaryBlue : HomeThemeColors.textSecondary,
+              textColor: isSaved ? HomeThemeColors.primaryBlue : HomeThemeColors.textSecondary,
+              onTap: () => controller.toggleSave(item),
+            );
+          }),
+          const SizedBox(width: 14),
+
+          _buildHomeActionButton(
+            icon: Icons.share_outlined,
+            label: 'Share',
+            iconColor: HomeThemeColors.textSecondary,
+            textColor: HomeThemeColors.textSecondary,
+            onTap: () => controller.sharePost(item),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHomeActionButton({
+    required IconData icon,
+    required String label,
+    required Color iconColor,
+    required Color textColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
+        decoration: BoxDecoration(
+          color: HomeThemeColors.softGrayButton,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: HomeThemeColors.border, width: 1.0),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: iconColor),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatNumber(int number) {
+    return number.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
     );
   }
 }
@@ -1163,12 +1638,12 @@ class HydrationGauge extends StatelessWidget {
       curve: Curves.easeOutCubic,
       builder: (context, animatedProgress, child) {
         return SizedBox(
-          width: 220,
-          height: 120,
+          width: 200,
+          height: 110,
           child: CustomPaint(
             painter: _SemicircleGaugePainter(
               progress: animatedProgress,
-              strokeWidth: 14.0,
+              strokeWidth: 12.0,
               gradientColors: gradientColors,
             ),
             child: Align(
@@ -1178,25 +1653,12 @@ class HydrationGauge extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(5),
-                      decoration: const BoxDecoration(
-                        color: AppColors.primarySoft,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.water_drop_rounded,
-                        color: AppColors.primary,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
                     Text(
                       '$percent%',
                       style: const TextStyle(
                         fontSize: 26,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textDark,
+                        fontWeight: FontWeight.w900,
+                        color: HomeThemeColors.primaryBlue,
                         letterSpacing: -0.5,
                       ),
                     ),
@@ -1226,12 +1688,12 @@ class MiniHydrationGauge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 100,
-      height: 60,
+      width: 90,
+      height: 52,
       child: CustomPaint(
         painter: _SemicircleGaugePainter(
           progress: progress,
-          strokeWidth: 8.0,
+          strokeWidth: 7.0,
           gradientColors: gradientColors,
         ),
         child: Align(
@@ -1245,15 +1707,15 @@ class MiniHydrationGauge extends StatelessWidget {
                   Icons.water_drop_rounded,
                   color: (gradientColors != null && gradientColors!.isNotEmpty)
                       ? gradientColors!.first
-                      : AppColors.primary,
-                  size: 13,
+                      : HomeThemeColors.tealAccent,
+                  size: 12,
                 ),
                 Text(
                   '$percent%',
                   style: const TextStyle(
-                    fontSize: 13.5,
+                    fontSize: 11.5,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textDark,
+                    color: HomeThemeColors.textPrimary,
                   ),
                 ),
               ],
@@ -1268,7 +1730,7 @@ class MiniHydrationGauge extends StatelessWidget {
 class _SemicircleGaugePainter extends CustomPainter {
   const _SemicircleGaugePainter({
     required this.progress,
-    this.strokeWidth = 14.0,
+    this.strokeWidth = 12.0,
     this.gradientColors,
   });
 
@@ -1294,20 +1756,20 @@ class _SemicircleGaugePainter extends CustomPainter {
     final radius = (size.width - strokeWidth) / 2;
     final rect = Rect.fromCircle(center: center, radius: radius);
 
-    // Background track (soft water-tinted track)
+    // Background track
     final bgPaint = Paint()
-      ..color = AppColors.gaugeTrack
+      ..color = const Color(0xFFF1F5F9)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
 
-    // Draw full background semicircle (from pi to 2*pi)
+    // Draw full background semicircle
     canvas.drawArc(rect, math.pi, math.pi, false, bgPaint);
 
     if (progress > 0) {
       final activeColors = (gradientColors != null && gradientColors!.length >= 2)
           ? gradientColors!
-          : AppColors.gaugeGradientColors;
+          : const [Color(0xFF38BDF8), Color(0xFF2563EB)];
 
       final gradient = SweepGradient(
         startAngle: math.pi,

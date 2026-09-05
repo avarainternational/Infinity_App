@@ -13,7 +13,24 @@ class WalletSendScreen extends BaseView<WalletController> {
   @override
   Widget buildView(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text(AppString.walletSendTitle)),
+      backgroundColor: WalletColors.background,
+      appBar: AppBar(
+        title: const Text(
+          AppString.walletSendTitle,
+          style: TextStyle(
+            color: WalletColors.textPrimary,
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
+        ),
+        backgroundColor: WalletColors.surface,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1, thickness: 1, color: WalletColors.border),
+        ),
+      ),
       body: SafeArea(
         child: Obx(() {
           final isActivated = controller.walletAccess.value != null;
@@ -34,21 +51,60 @@ class WalletSendScreen extends BaseView<WalletController> {
                     TextField(
                       controller: controller.recipientController,
                       readOnly: true,
-                      decoration: const InputDecoration(
+                      style: WalletTextStyles.mono,
+                      decoration: InputDecoration(
                         labelText: AppString.walletRecipientLabel,
+                        labelStyle: const TextStyle(color: WalletColors.textMuted),
                         hintText: AppString.walletRecipientReadonlyHint,
-                        prefixIcon: Icon(Icons.account_balance_wallet_outlined),
+                        prefixIcon: const Icon(
+                          Icons.account_balance_wallet_outlined,
+                          color: WalletColors.primary,
+                        ),
+                        filled: true,
+                        fillColor: WalletColors.surfaceMuted,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(WalletRadius.md),
+                          borderSide: const BorderSide(color: WalletColors.border),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(WalletRadius.md),
+                          borderSide: const BorderSide(color: WalletColors.border),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(WalletRadius.md),
+                          borderSide: const BorderSide(color: WalletColors.primary, width: 1.5),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: WalletSpacing.sm),
+                    const SizedBox(height: WalletSpacing.md),
                     InputDecorator(
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: AppString.walletAssetReadonlyLabel,
-                        prefixIcon: Icon(Icons.loyalty_outlined),
+                        labelStyle: const TextStyle(color: WalletColors.textMuted),
+                        prefixIcon: const Icon(
+                          Icons.stars_rounded,
+                          color: WalletColors.primary,
+                        ),
+                        filled: true,
+                        fillColor: WalletColors.surfaceMuted,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(WalletRadius.md),
+                          borderSide: const BorderSide(color: WalletColors.border),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(WalletRadius.md),
+                          borderSide: const BorderSide(color: WalletColors.border),
+                        ),
                       ),
-                      child: Text(controller.assetCode),
+                      child: Text(
+                        controller.assetCode,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: WalletColors.textPrimary,
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: WalletSpacing.sm),
+                    const SizedBox(height: WalletSpacing.md),
                     TextField(
                       controller: controller.amountController,
                       keyboardType: const TextInputType.numberWithOptions(
@@ -57,14 +113,37 @@ class WalletSendScreen extends BaseView<WalletController> {
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                       ],
-                      decoration: const InputDecoration(
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: WalletColors.textPrimary,
+                      ),
+                      decoration: InputDecoration(
                         labelText: AppString.walletAmountLabel,
-                        prefixIcon: Icon(Icons.payments_outlined),
+                        labelStyle: const TextStyle(color: WalletColors.textMuted),
+                        prefixIcon: const Icon(
+                          Icons.payments_outlined,
+                          color: WalletColors.primary,
+                        ),
+                        filled: true,
+                        fillColor: WalletColors.surface,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(WalletRadius.md),
+                          borderSide: const BorderSide(color: WalletColors.border),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(WalletRadius.md),
+                          borderSide: const BorderSide(color: WalletColors.border),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(WalletRadius.md),
+                          borderSide: const BorderSide(color: WalletColors.primary, width: 1.5),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: WalletSpacing.sm),
+                    const SizedBox(height: WalletSpacing.md),
                     _ValidationStatus(controller: controller),
-                    const SizedBox(height: WalletSpacing.sm),
+                    const SizedBox(height: WalletSpacing.lg),
                     _ReviewButton(controller: controller),
                   ],
                 ),
@@ -89,23 +168,66 @@ class _ValidationStatus extends StatelessWidget {
       if (message.isEmpty) {
         return const SizedBox.shrink();
       }
-      return Row(
-        children: [
-          if (controller.isRecipientValidating.value)
-            const SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          else
-            Icon(
-              controller.isRecipientValid.value
-                  ? Icons.check_circle_outline
-                  : Icons.error_outline,
+
+      final isValid = controller.isRecipientValid.value;
+      final isValidating = controller.isRecipientValidating.value;
+
+      return Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: WalletSpacing.md,
+          vertical: WalletSpacing.sm,
+        ),
+        decoration: BoxDecoration(
+          color: isValidating
+              ? WalletColors.infoBg
+              : isValid
+                  ? WalletColors.successBg
+                  : WalletColors.errorBg,
+          borderRadius: BorderRadius.circular(WalletRadius.sm),
+          border: Border.all(
+            color: isValidating
+                ? WalletColors.infoBorder
+                : isValid
+                    ? WalletColors.successBorder
+                    : WalletColors.errorBorder,
+          ),
+        ),
+        child: Row(
+          children: [
+            if (isValidating)
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(WalletColors.primary),
+                ),
+              )
+            else
+              Icon(
+                isValid
+                    ? Icons.check_circle_outline_rounded
+                    : Icons.error_outline_rounded,
+                size: 18,
+                color: isValid ? WalletColors.success : WalletColors.error,
+              ),
+            const SizedBox(width: WalletSpacing.sm),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: isValidating
+                      ? WalletColors.info
+                      : isValid
+                          ? WalletColors.success
+                          : WalletColors.error,
+                ),
+              ),
             ),
-          const SizedBox(width: WalletSpacing.sm),
-          Expanded(child: Text(message)),
-        ],
+          ],
+        ),
       );
     });
   }
@@ -123,13 +245,33 @@ class _ReviewButton extends StatelessWidget {
       builder: (_, value, _) {
         final amount = double.tryParse(value.text.trim());
         final hasValidAmount = amount != null && amount > 0;
+
         return Obx(
-          () => FilledButton.icon(
-            onPressed: controller.isRecipientValid.value && hasValidAmount
-                ? controller.continueToReview
-                : null,
-            icon: const Icon(Icons.fact_check_outlined),
-            label: const Text(AppString.walletReviewTitle),
+          () => SizedBox(
+            height: 48,
+            child: FilledButton.icon(
+              onPressed: controller.isRecipientValid.value && hasValidAmount
+                  ? controller.continueToReview
+                  : null,
+              icon: const Icon(Icons.fact_check_outlined, size: 18),
+              label: const Text(
+                AppString.walletReviewTitle,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: WalletColors.primary,
+                disabledBackgroundColor: WalletColors.surfaceMuted,
+                foregroundColor: WalletColors.textOnPrimary,
+                disabledForegroundColor: WalletColors.textLight,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(WalletRadius.md),
+                ),
+              ),
+            ),
           ),
         );
       },
@@ -147,7 +289,13 @@ class _MessagePanel extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(WalletSpacing.lg),
       children: [
-        SectionCard(title: AppString.walletSendTitle, child: Text(message)),
+        SectionCard(
+          title: AppString.walletSendTitle,
+          child: Text(
+            message,
+            style: WalletTextStyles.bodyMuted,
+          ),
+        ),
       ],
     );
   }

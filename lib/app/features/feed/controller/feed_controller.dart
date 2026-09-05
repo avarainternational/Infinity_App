@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:infinity_wellness/app/constant/resources/app_images.dart';
 import 'package:infinity_wellness/app/core/base/base_controller.dart';
+import 'package:infinity_wellness/app/data/repositories/feed_repository.dart';
+import 'package:infinity_wellness/app/data/repositories/user_repository.dart';
+import 'package:infinity_wellness/app/data/services/auth_service.dart';
 
-enum FeedItemType { medicalNews, mythVsFact, announcement }
+enum FeedItemType { medicalNews, mythVsFact, announcement, promo }
 
 class FeedItem {
   const FeedItem({
     required this.id,
+    required this.authorName,
+    this.authorAvatarText = 'IW',
+    this.badgeText = 'Promoted By',
     required this.title,
+    required this.caption,
     required this.summary,
     required this.fullContent,
     required this.type,
@@ -19,15 +27,25 @@ class FeedItem {
     required this.bannerIcon,
     required this.bannerTag,
     required this.publishedTime,
+    this.timeAgo = '21 min(s) ago',
     this.imageAsset,
+    this.imageUrl,
+    this.priceTag,
+    this.badgeOverlayText,
+    this.externalUrl,
     this.keyTakeaways = const [],
     this.mythText,
     this.factText,
-    this.helpfulCount = 0,
+    this.likesCount = 24,
+    this.sharesCount = 12,
   });
 
   final String id;
+  final String authorName;
+  final String authorAvatarText;
+  final String badgeText;
   final String title;
+  final String caption;
   final String summary;
   final String fullContent;
   final FeedItemType type;
@@ -38,11 +56,76 @@ class FeedItem {
   final IconData bannerIcon;
   final String bannerTag;
   final String publishedTime;
+  final String timeAgo;
   final String? imageAsset;
+  final String? imageUrl;
+  final String? priceTag;
+  final String? badgeOverlayText;
+  final String? externalUrl;
   final List<String> keyTakeaways;
   final String? mythText;
   final String? factText;
-  final int helpfulCount;
+  final int likesCount;
+  final int sharesCount;
+
+  factory FeedItem.fromJson(Map<String, dynamic> json) {
+    FeedItemType parseType(String? val) {
+      switch (val) {
+        case 'medicalNews':
+          return FeedItemType.medicalNews;
+        case 'mythVsFact':
+          return FeedItemType.mythVsFact;
+        case 'promo':
+          return FeedItemType.promo;
+        default:
+          return FeedItemType.announcement;
+      }
+    }
+
+    String formatTimeAgo(dynamic timestamp) {
+      if (timestamp == null) return 'Just now';
+      try {
+        final dt = DateTime.parse(timestamp.toString()).toLocal();
+        final diff = DateTime.now().difference(dt);
+        if (diff.inMinutes < 1) return 'Just now';
+        if (diff.inMinutes < 60) return '${diff.inMinutes} min(s) ago';
+        if (diff.inHours < 24) return '${diff.inHours} hour(s) ago';
+        if (diff.inDays < 7) return '${diff.inDays} day(s) ago';
+        return '${dt.day}/${dt.month}/${dt.year}';
+      } catch (_) {
+        return 'Recently';
+      }
+    }
+
+    return FeedItem(
+      id: json['id']?.toString() ?? '',
+      authorName: json['author_name']?.toString() ?? 'Infinity Wellness',
+      authorAvatarText: json['author_avatar_text']?.toString() ??
+          (json['author_name'] != null && json['author_name'].toString().isNotEmpty
+              ? json['author_name'].toString().substring(0, 1).toUpperCase()
+              : 'IW'),
+      badgeText: json['badge_text']?.toString() ?? 'Promoted By',
+      title: json['title']?.toString() ?? '',
+      caption: json['caption']?.toString() ?? (json['summary']?.toString() ?? ''),
+      summary: json['summary']?.toString() ?? '',
+      fullContent: json['full_content']?.toString() ?? '',
+      type: parseType(json['post_type']?.toString()),
+      category: json['category']?.toString() ?? 'General',
+      authorRole: json['author_role']?.toString() ?? 'Verified Publisher',
+      readTimeMinutes: (json['read_time_minutes'] as num?)?.toInt() ?? 3,
+      bannerGradient: const [Color(0xFF0099FF), Color(0xFF0055D4)],
+      bannerIcon: Icons.article_rounded,
+      bannerTag: json['badge_text']?.toString() ?? 'NEWS',
+      publishedTime: formatTimeAgo(json['published_at'] ?? json['created_at']),
+      timeAgo: formatTimeAgo(json['published_at'] ?? json['created_at']),
+      imageUrl: json['image_url']?.toString(),
+      priceTag: json['price_tag']?.toString(),
+      badgeOverlayText: json['badge_overlay_text']?.toString(),
+      externalUrl: json['external_url']?.toString(),
+      likesCount: (json['likes_count'] as num?)?.toInt() ?? 0,
+      sharesCount: (json['shares_count'] as num?)?.toInt() ?? 0,
+    );
+  }
 }
 
 enum SocialTab { challenges, feed, leaderboard }
@@ -51,22 +134,28 @@ class LeaderboardUser {
   const LeaderboardUser({
     required this.rank,
     required this.name,
-    required this.avatarEmoji,
+    this.initials = 'IW',
     required this.points,
     required this.streakDays,
     required this.hydrationPercent,
     this.isCurrentUser = false,
     this.badgeTitle,
+    this.icon = Icons.workspace_premium_rounded,
+    this.iconColor = const Color(0xFF0284C7),
+    this.avatarGradient = const [Color(0xFFE0F2FE), Color(0xFFBAE6FD)],
   });
 
   final int rank;
   final String name;
-  final String avatarEmoji;
+  final String initials;
   final int points;
   final int streakDays;
   final int hydrationPercent;
   final bool isCurrentUser;
   final String? badgeTitle;
+  final IconData icon;
+  final Color iconColor;
+  final List<Color> avatarGradient;
 }
 
 class CommunityChallenge {
@@ -98,9 +187,19 @@ class CommunityChallenge {
 }
 
 class FeedController extends BaseController {
-  final activeTab = SocialTab.challenges.obs;
+  FeedController({
+    FeedRepository? feedRepository,
+    UserRepository? userRepository,
+  })  : _feedRepository = feedRepository ?? (Get.isRegistered<FeedRepository>() ? Get.find<FeedRepository>() : FeedRepositoryImpl()),
+        _userRepository = userRepository ?? (Get.isRegistered<UserRepository>() ? Get.find<UserRepository>() : UserRepositoryImpl());
+
+  final FeedRepository _feedRepository;
+  final UserRepository _userRepository;
+  AuthService? get _authService => Get.isRegistered<AuthService>() ? AuthService.to : null;
+
+  final activeTab = SocialTab.feed.obs;
   final selectedCategory = 'All'.obs;
-  final categories = const ['All', 'Medical News', 'Myth vs. Fact', 'Ecosystem'];
+  final categories = const ['All', 'Saved', 'Medical News', 'Myth vs. Fact', 'Promotions'];
 
   // Leaderboard filters & data
   final leaderboardFilter = 'Weekly'.obs;
@@ -110,80 +209,75 @@ class FeedController extends BaseController {
     leaderboardFilter.value = filter;
   }
 
-  final leaderboardUsers = const <LeaderboardUser>[
-    LeaderboardUser(
+  // Saved state
+  final savedPostIds = <String>{}.obs;
+
+  // Live Supabase Leaderboard Users
+  final liveLeaderboardUsers = <LeaderboardUser>[
+    const LeaderboardUser(
       rank: 1,
       name: 'Dr. Maya Lin',
-      avatarEmoji: '👩‍⚕️',
+      initials: 'ML',
       points: 2850,
       streakDays: 45,
       hydrationPercent: 98,
       badgeTitle: 'Hydration Deity',
+      icon: Icons.workspace_premium_rounded,
+      iconColor: Color(0xFFF59E0B),
+      avatarGradient: [Color(0xFFFEF3C7), Color(0xFFFDE68A)],
     ),
-    LeaderboardUser(
+    const LeaderboardUser(
       rank: 2,
       name: 'Alex & Elena',
-      avatarEmoji: '⚡',
+      initials: 'AE',
       points: 2420,
       streakDays: 38,
       hydrationPercent: 95,
       badgeTitle: 'Synergy Master',
+      icon: Icons.military_tech_rounded,
+      iconColor: Color(0xFF94A3B8),
+      avatarGradient: [Color(0xFFF1F5F9), Color(0xFFE2E8F0)],
     ),
-    LeaderboardUser(
+    const LeaderboardUser(
       rank: 3,
       name: 'Kai Rivera',
-      avatarEmoji: '🏄‍♂️',
+      initials: 'KR',
       points: 2190,
       streakDays: 31,
       hydrationPercent: 92,
       badgeTitle: 'Streak Champion',
+      icon: Icons.shield_rounded,
+      iconColor: Color(0xFFD97706),
+      avatarGradient: [Color(0xFFFFF1EE), Color(0xFFFFEDD5)],
     ),
-    LeaderboardUser(
+    const LeaderboardUser(
       rank: 4,
-      name: 'You (Alex)',
-      avatarEmoji: '🚀',
+      name: 'You (Infinity User)',
+      initials: 'YOU',
       points: 1840,
       streakDays: 24,
       hydrationPercent: 90,
       isCurrentUser: true,
       badgeTitle: 'Flame Keeper',
+      icon: Icons.star_rounded,
+      iconColor: Color(0xFF0284C7),
+      avatarGradient: [Color(0xFFE0F2FE), Color(0xFFBAE6FD)],
     ),
-    LeaderboardUser(
+    const LeaderboardUser(
       rank: 5,
       name: 'Sarah Chen',
-      avatarEmoji: '🌸',
+      initials: 'SC',
       points: 1720,
       streakDays: 21,
       hydrationPercent: 88,
       badgeTitle: 'Vitality Pro',
+      icon: Icons.diamond_outlined,
+      iconColor: Color(0xFF0284C7),
+      avatarGradient: [Color(0xFFE0F2FE), Color(0xFFBAE6FD)],
     ),
-    LeaderboardUser(
-      rank: 6,
-      name: 'Marcus Brody',
-      avatarEmoji: '🦁',
-      points: 1560,
-      streakDays: 19,
-      hydrationPercent: 85,
-      badgeTitle: 'Hydro Pioneer',
-    ),
-    LeaderboardUser(
-      rank: 7,
-      name: 'Chloe & Sam',
-      avatarEmoji: '💖',
-      points: 1410,
-      streakDays: 16,
-      hydrationPercent: 84,
-      badgeTitle: 'Synergy Duo',
-    ),
-  ];
+  ].obs;
 
-  // Expand / Collapse state for news cards
-  final expandedItemIds = <String>{}.obs;
-
-  // Helpful interactions
-  final helpfulVotes = <String, int>{}.obs;
-  final userVotedHelpful = <String, bool>{}.obs;
-  final bookmarkedItemIds = <String>{}.obs;
+  List<LeaderboardUser> get leaderboardUsers => liveLeaderboardUsers;
 
   final challenges = <CommunityChallenge>[
     const CommunityChallenge(
@@ -212,154 +306,170 @@ class FeedController extends BaseController {
       bannerGradient: [Color(0xFFFF6D00), Color(0xFFE64A19)],
       bannerIcon: Icons.local_fire_department_rounded,
     ),
-    const CommunityChallenge(
-      id: 'ch-3',
-      title: 'Digital Screen-Break Habit',
-      category: 'Mental Wellness',
-      description: 'Take verified 5-minute hydration & stretch pauses every 90 minutes.',
-      participantsCount: 520,
-      rewardPoints: 100,
-      daysLeft: 5,
-      isJoined: false,
-      progress: 0.0,
-      bannerGradient: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
-      bannerIcon: Icons.self_improvement_rounded,
-    ),
   ].obs;
 
-  final feedItems = const <FeedItem>[
+  static const defaultFeedItems = <FeedItem>[
     FeedItem(
       id: 'feed-1',
+      authorName: 'M Travel',
+      authorAvatarText: 'MT',
+      badgeText: 'Promoted By',
+      title: 'Beijing-Guangzhou Wellness Travel Expedition',
+      caption: '✨ မဟာဗုဒ္ဓ၏ မြင့်မြတ်လှသော စွယ်တော်မြတ်ကို ဖူးမြော်ကြည်ညိုရင် တရုတ်ပြည်ရဲ့ သမိုင်းဝင် အထင်ကရ နေရာများသို့ လေ့လာရေးခရီးစဉ်...',
+      summary: 'Explore China historical heritage and wellness mineral hot spring destinations.',
+      fullContent: 'Experience transformative wellness travel with guided hydration schedules and mineral spring immersion across historical cultural heritage sites.',
+      type: FeedItemType.promo,
+      category: 'Promotions',
+      authorRole: 'Verified Travel Partner',
+      readTimeMinutes: 2,
+      bannerGradient: [Color(0xFFE65100), Color(0xFFF57C00)],
+      bannerIcon: Icons.flight_takeoff_rounded,
+      bannerTag: 'SPECIAL TOUR',
+      publishedTime: '21 min(s) ago',
+      timeAgo: '21 min(s) ago',
+      priceTag: '\$1350',
+      badgeOverlayText: 'BEIJING-GUANGZHOU',
+      imageAsset: AppImages.news1,
+      likesCount: 56,
+      sharesCount: 18,
+    ),
+    FeedItem(
+      id: 'feed-2',
+      authorName: 'JJ EXPRESS',
+      authorAvatarText: 'JJ',
+      badgeText: 'Promoted By',
+      title: 'Luxury Highway VIP Travel & Mineral Refreshment',
+      caption: 'နောက်ထပ် ပြေးဆွဲမည့် ခရီးစဉ်အသစ်က ဘာဖြစ်မလဲ? VIP Coach များတွင် Infinity Pure Water အခမဲ့ ဖြန့်ဝေပေးသွားပါမည်။',
+      summary: 'VIP premium express travel with built-in hydration packs across all major routes.',
+      fullContent: 'Enjoy comfortable air-conditioned journeys with onboard hydration monitors and pure water bottles provided on every seat.',
+      type: FeedItemType.promo,
+      category: 'Promotions',
+      authorRole: 'Official Transport Partner',
+      readTimeMinutes: 2,
+      bannerGradient: [Color(0xFF7B1FA2), Color(0xFF4A148C)],
+      bannerIcon: Icons.directions_bus_rounded,
+      bannerTag: 'VIP EXPRESS',
+      publishedTime: '24 min(s) ago',
+      timeAgo: '24 min(s) ago',
+      badgeOverlayText: 'WWW.JJEXPRESS.NET',
+      imageAsset: AppImages.news2,
+      likesCount: 89,
+      sharesCount: 34,
+    ),
+    FeedItem(
+      id: 'feed-3',
+      authorName: 'Infinity Health Desk',
+      authorAvatarText: 'IH',
+      badgeText: 'Curated Evidence',
       title: 'Can Drinking 3L of Water Cure Acne? The Clinical Reality',
-      summary:
-          'Dermatological studies show that while optimal hydration maintains skin elasticity and barrier function, it does not replace targeted acne care.',
-      fullContent:
-          'The belief that drinking excessive amounts of water will flush toxins and cure acne vulgaris is widespread on social media. While adequate hydration is vital for maintaining skin barrier integrity, sebum balance, and cellular turnover, clinical dermatological evidence clarifies that acne is primarily caused by follicular hyperkeratinization, excess sebum production mediated by androgens, and Cutibacterium acnes colonization.\n\nDrinking beyond your physiologic hydration baseline (approx. 2.5L to 3.0L for active adults) does not accelerate pore decongestion. Instead, a holistic regimen combining gentle non-comedogenic skincare, balanced nutrition, and consistent hydration yields the best clinical outcomes.',
+      caption: '💧 ရေများများသောက်ခြင်းက ဝက်ခြံကို တကယ်ပျောက်စေသလား? ဆေးပညာရှင်များ၏ ဓမ္မဓိဋ္ဌာန်ကျသော သုတေသနရှင်းလင်းချက်။',
+      summary: 'Dermatological studies show that optimal hydration maintains skin elasticity but is not a standalone acne cure.',
+      fullContent: 'Clinical dermatological evidence clarifies that acne is mediated by sebum and bacteria. Hydration supports skin barrier function and toxin elimination.',
       type: FeedItemType.mythVsFact,
-      category: 'Dermatology & Hydration',
+      category: 'Myth vs. Fact',
       authorRole: 'Verified by Dr. Maya Lin & Med Student Cohort',
       readTimeMinutes: 3,
       bannerGradient: [Color(0xFF00B4DB), Color(0xFF0083B0)],
       bannerIcon: Icons.water_drop_rounded,
       bannerTag: 'MYTH BUSTER',
-      publishedTime: '2 hours ago',
-      imageAsset: AppImages.news2,
-      keyTakeaways: [
-        'Hydration improves skin barrier resilience but is not a standalone cure for acne.',
-        'Over-hydration does not "wash away" subcutaneous follicular bacteria.',
-        'Combine steady hydration (2.5L/day) with evidence-based topical treatments.',
-      ],
-      mythText: 'Drinking extreme amounts of water completely eliminates acne.',
-      factText:
-          'Hydration supports skin cell turnover and kidney filtration, but acne pathogenesis involves sebum, hormones, and follicular bacteria.',
-      helpfulCount: 84,
-    ),
-    FeedItem(
-      id: 'feed-2',
-      title: 'Optimal Electrolyte Balance During High-Intensity Training',
-      summary:
-          'Understanding sodium, potassium, and magnesium loss during intense cardio and the science of rapid cellular replenishment.',
-      fullContent:
-          'When engaging in vigorous training lasting over 60 minutes or in warm environments, sweat output leads to significant loss of essential electrolytes—predominantly sodium, chloride, and potassium. Ingesting plain water in extreme volumes without electrolytes can paradoxically lead to exercise-associated hyponatremia (dilutional low blood sodium).\n\nFor optimal recovery and muscle contraction velocity, integrate hypotonic electrolyte formulas containing 300–500mg sodium per 500ml of fluid during workouts exceeding 45 minutes.',
-      type: FeedItemType.medicalNews,
-      category: 'Sports & Physiology',
-      authorRole: 'Curated by Sports Medicine Resident',
-      readTimeMinutes: 4,
-      bannerGradient: [Color(0xFF6A11CB), Color(0xFF2575FC)],
-      bannerIcon: Icons.bolt_rounded,
-      bannerTag: 'CLINICAL PHYSIOLOGY',
-      publishedTime: '5 hours ago',
-      imageAsset: AppImages.news1,
-      keyTakeaways: [
-        'Sweating depletes sodium fastest, which impairs neuromuscular signaling if unreplaced.',
-        'Plain water is great for <45 min workouts; add electrolytes for high-intensity sessions.',
-        'Magnesium and potassium co-factors prevent exercise-associated cramps.',
-      ],
-      helpfulCount: 112,
-    ),
-    FeedItem(
-      id: 'feed-3',
-      title: 'Circadian Biology: Debunking Blue Light & Sleep Architecture Myths',
-      summary:
-          'How evening screen exposure impacts melatonin suppression and evidence-based digital hygiene protocols for restorative deep sleep.',
-      fullContent:
-          'Specialized intrinsically photosensitive retinal ganglion cells (ipRGCs) are highly sensitive to blue-wavelength light (460–480 nm). Exposure to bright digital screens within 90 minutes of bedtime delays nocturnal melatonin release by up to 45%, shifting circadian phase and fragmenting REM cycles.\n\nWhile blue-light filtering glasses reduce retinal strain, dimming ambient room light and establishing a digital sunset 60 minutes before bedtime remain the most effective interventions for deep sleep recovery.',
-      type: FeedItemType.medicalNews,
-      category: 'Mental Health & Sleep',
-      authorRole: 'Verified by Neuroscience Fellow',
-      readTimeMinutes: 5,
-      bannerGradient: [Color(0xFF134E5E), Color(0xFF71B280)],
-      bannerIcon: Icons.bedtime_rounded,
-      bannerTag: 'NEUROSCIENCE',
-      publishedTime: '1 day ago',
+      publishedTime: '1 hour ago',
+      timeAgo: '1 hour ago',
+      badgeOverlayText: 'EVIDENCE-BASED LITERACY',
       imageAsset: AppImages.news3,
-      keyTakeaways: [
-        'Blue wavelengths suppress pineal melatonin secretion more than other light spectrums.',
-        'Blue-light glasses reduce fatigue but do not replace lowering total room lux.',
-        'Establish a 45-60 min screen-free wind-down routine with hydration.',
-      ],
-      helpfulCount: 96,
+      likesCount: 142,
+      sharesCount: 45,
     ),
     FeedItem(
       id: 'feed-4',
-      title: 'Infinity Wellness Ecosystem Launch: Phase 1 Mini-Apps',
-      summary:
-          'Discover our 3 dedicated digital health modules: Medical News, Smart Hydration, and 1-on-1 Friend Synergy.',
-      fullContent:
-          'We are thrilled to roll out the official Phase 1 release of the Infinity Wellness Super App! Our mission is to bridge scientific health literacy with proactive, daily mutual accountability.\n\nExplore our core modules:\n• Medical News: Peer-reviewed health breakdowns & myth busting.\n• Smart Hydration: Personalized water intake algorithms calibrated to your biometric metrics.\n• Friend Synergy: Pure 1-on-1 mutual accountability with real-time nudges and shared synergy streaks.',
-      type: FeedItemType.announcement,
-      category: 'Ecosystem News',
-      authorRole: 'Infinity Water Health Team',
-      readTimeMinutes: 2,
-      bannerGradient: [Color(0xFFFF8008), Color(0xFFFFC837)],
-      bannerIcon: Icons.stars_rounded,
-      bannerTag: 'OFFICIAL RELEASE',
-      publishedTime: '2 days ago',
-      imageAsset: AppImages.news4,
-      keyTakeaways: [
-        'All 3 mini-apps are fully integrated into your native Super App shell.',
-        'Earn Wellness Points daily by hitting hydration targets and completing synergy goals.',
-        'More clinical modules coming in Phase 2.',
-      ],
-      helpfulCount: 230,
-    ),
-    FeedItem(
-      id: 'feed-5',
-      title: 'The 2% Dehydration Paradox: How Subtle Water Deficits Impair Focus',
-      summary:
-          'Cognitive performance drops by up to 15% when total body water decreases by just 2%, mimicking mild sleep deprivation.',
-      fullContent:
-          'Neurocognitive trials demonstrate that even mild dehydration (1.5% to 2% loss of body mass via water) significantly decreases working memory, visual-spatial processing speed, and sustained attention span.\n\nBecause the brain is 75% water, mild cellular hypohydration alters neuronal volume and neurotransmitter synthesis. Keeping a calibrated water bottle nearby and drinking at regular intervals prevents the mid-afternoon cognitive slump.',
+      authorName: 'Dr. Sarah Lin (MD)',
+      authorAvatarText: 'SL',
+      badgeText: 'Verified MD',
+      title: 'Optimal Cellular Hydration: Electrolytes vs Plain Water',
+      caption: '⚡ အားကစားပြုလုပ်ချိန် သို့မဟုတ် ရာသီဥတုပူပြင်းချိန်တွင် ဆဲလ်အတွင်း ရေဓာတ်ပြည့်ဝစေရန် Electrolyte များ၏ အရေးပါပုံ။',
+      summary: 'Sweating depletes sodium and potassium. Discover when to integrate electrolyte formulas during intense physical workouts.',
+      fullContent: 'For workouts exceeding 45 minutes, hypotonic electrolyte solutions replenish cellular sodium faster than plain water, preventing cramps and muscle fatigue.',
       type: FeedItemType.medicalNews,
-      category: 'Cognitive Health',
-      authorRole: 'Verified by Clinical Neurology Resident',
-      readTimeMinutes: 3,
-      bannerGradient: [Color(0xFF0072FF), Color(0xFF00C6FF)],
-      bannerIcon: Icons.psychology_rounded,
-      bannerTag: 'BRAIN & FOCUS',
-      publishedTime: '3 days ago',
-      keyTakeaways: [
-        'Thirst sensation only activates after 1-2% dehydration has already occurred.',
-        'Regular micro-sips maintain steady cerebral blood flow and focus.',
-        'Pair water logging with work breaks for compound productivity gains.',
-      ],
-      helpfulCount: 145,
+      category: 'Medical News',
+      authorRole: 'Sports Medicine Resident',
+      readTimeMinutes: 4,
+      bannerGradient: [Color(0xFF6A11CB), Color(0xFF2575FC)],
+      bannerIcon: Icons.bolt_rounded,
+      bannerTag: 'SPORTS SCIENCE',
+      publishedTime: '3 hours ago',
+      timeAgo: '3 hours ago',
+      badgeOverlayText: 'CELLULAR HYDRATION',
+      imageAsset: AppImages.news4,
+      likesCount: 215,
+      sharesCount: 67,
     ),
-  ].obs;
+  ];
+
+  late final RxList<FeedItem> liveFeedItems = <FeedItem>[...defaultFeedItems].obs;
+  List<FeedItem> get feedItems => liveFeedItems;
+  final isLoadingFeed = false.obs;
 
   @override
   void onInit() {
     super.onInit();
-    // Initialize helpful counts
-    for (final item in feedItems) {
-      helpfulVotes[item.id] = item.helpfulCount;
-      userVotedHelpful[item.id] = false;
+    _loadLiveFeedPosts();
+    _loadUserFeedInteractions();
+    _loadLeaderboard();
+  }
+
+  Future<void> refreshFeed() async {
+    isLoadingFeed.value = true;
+    try {
+      final livePosts = await _feedRepository.fetchFeedPosts();
+      if (livePosts.isNotEmpty) {
+        liveFeedItems.assignAll(livePosts);
+      }
+      await _loadUserFeedInteractions();
+      await _loadLeaderboard();
+    } finally {
+      isLoadingFeed.value = false;
     }
   }
+
+  Future<void> _loadLiveFeedPosts() async {
+    isLoadingFeed.value = true;
+    try {
+      final livePosts = await _feedRepository.fetchFeedPosts();
+      if (livePosts.isNotEmpty) {
+        liveFeedItems.assignAll(livePosts);
+      }
+    } finally {
+      isLoadingFeed.value = false;
+    }
+  }
+
+  Future<void> _loadUserFeedInteractions() async {
+    final userId = _authService?.currentUser.value?.id ?? '';
+    if (userId.isNotEmpty) {
+      final savedIds = await _feedRepository.getSavedPostIds(userId);
+      savedPostIds.assignAll(savedIds);
+    }
+  }
+
+  Future<void> _loadLeaderboard() async {
+    final userId = _authService?.currentUser.value?.id ?? '';
+    try {
+      final users = await _userRepository.getLeaderboardUsers(currentUserId: userId);
+      if (users.isNotEmpty) {
+        liveLeaderboardUsers.assignAll(users);
+      }
+    } catch (e) {
+      debugPrint('⚠️ Error loading leaderboard in FeedController: $e');
+    }
+  }
+
+  Future<void> refreshLeaderboard() => _loadLeaderboard();
 
   List<FeedItem> get filteredItems {
     if (selectedCategory.value == 'All') {
       return feedItems;
+    }
+    if (selectedCategory.value == 'Saved') {
+      return feedItems.where((i) => savedPostIds.contains(i.id)).toList();
     }
     if (selectedCategory.value == 'Medical News') {
       return feedItems.where((i) => i.type == FeedItemType.medicalNews).toList();
@@ -367,8 +477,8 @@ class FeedController extends BaseController {
     if (selectedCategory.value == 'Myth vs. Fact') {
       return feedItems.where((i) => i.type == FeedItemType.mythVsFact).toList();
     }
-    if (selectedCategory.value == 'Ecosystem') {
-      return feedItems.where((i) => i.type == FeedItemType.announcement).toList();
+    if (selectedCategory.value == 'Promotions') {
+      return feedItems.where((i) => i.type == FeedItemType.promo).toList();
     }
     return feedItems;
   }
@@ -379,10 +489,53 @@ class FeedController extends BaseController {
 
   void selectTab(SocialTab tab) {
     activeTab.value = tab;
+    if (tab == SocialTab.leaderboard) {
+      _loadLeaderboard();
+    }
   }
 
-  bool isExpanded(String id) => expandedItemIds.contains(id);
+  bool isSaved(String id) => savedPostIds.contains(id);
 
+  Future<void> toggleSave(FeedItem item) async {
+    final userId = _authService?.currentUser.value?.id ?? '';
+    final wasSaved = savedPostIds.contains(item.id);
+
+    if (wasSaved) {
+      savedPostIds.remove(item.id);
+      if (Get.context != null) {
+        Get.snackbar(
+          'Post Removed',
+          'Post removed from your saved bookmarks.',
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 2),
+        );
+      }
+    } else {
+      savedPostIds.add(item.id);
+      if (Get.context != null) {
+        Get.snackbar(
+          'Saved to Bookmarks! 🔖',
+          'Post saved to your personal library.',
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 2),
+        );
+      }
+    }
+
+    if (userId.isNotEmpty) {
+      await _feedRepository.toggleSavePost(
+        userId: userId,
+        postId: item.id,
+        title: item.title,
+        category: item.category,
+        authorName: item.authorName,
+      );
+    }
+  }
+
+  // Expand / collapse state
+  final expandedItemIds = <String>{}.obs;
+  bool isExpanded(String id) => expandedItemIds.contains(id);
   void toggleExpand(String id) {
     if (expandedItemIds.contains(id)) {
       expandedItemIds.remove(id);
@@ -391,61 +544,33 @@ class FeedController extends BaseController {
     }
   }
 
+  // Bookmarks / Save aliases
+  bool isBookmarked(String id) => isSaved(id);
   void toggleBookmark(String id) {
-    if (bookmarkedItemIds.contains(id)) {
-      bookmarkedItemIds.remove(id);
-      if (Get.context != null) {
-        Get.snackbar(
-          'Bookmark Removed',
-          'Article removed from your saved insights.',
-          snackPosition: SnackPosition.BOTTOM,
-          duration: const Duration(seconds: 2),
-        );
-      }
+    final item = feedItems.firstWhereOrNull((i) => i.id == id);
+    if (item != null) {
+      toggleSave(item);
     } else {
-      bookmarkedItemIds.add(id);
-      if (Get.context != null) {
-        Get.snackbar(
-          'Article Saved! 🔖',
-          'Article saved to your wellness library.',
-          snackPosition: SnackPosition.BOTTOM,
-          duration: const Duration(seconds: 2),
-        );
+      if (savedPostIds.contains(id)) {
+        savedPostIds.remove(id);
+      } else {
+        savedPostIds.add(id);
       }
     }
   }
 
-  void toggleHelpful(String id) {
-    final hasVoted = userVotedHelpful[id] ?? false;
-    final currentCount = helpfulVotes[id] ?? 0;
-
-    if (!hasVoted) {
-      userVotedHelpful[id] = true;
-      helpfulVotes[id] = currentCount + 1;
-      if (Get.context != null) {
-        Get.snackbar(
-          'Thank you! 🙌',
-          'Your vote helps us surface high-quality medical literacy insights.',
-          snackPosition: SnackPosition.BOTTOM,
-          duration: const Duration(seconds: 2),
-        );
-      }
-    } else {
-      userVotedHelpful[id] = false;
-      helpfulVotes[id] = currentCount > 0 ? currentCount - 1 : 0;
+  void sharePost(FeedItem item) {
+    Clipboard.setData(ClipboardData(
+      text: '${item.title}\n\n${item.caption}\n\nShared from Infinity Wellness App',
+    ));
+    if (Get.context != null) {
+      Get.snackbar(
+        'Link Copied! 🔗',
+        'Post content and share link copied to clipboard.',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 2),
+      );
     }
-  }
-
-  int getHelpfulCount(String id) {
-    return helpfulVotes[id] ?? 0;
-  }
-
-  bool isHelpfulVoted(String id) {
-    return userVotedHelpful[id] ?? false;
-  }
-
-  bool isBookmarked(String id) {
-    return bookmarkedItemIds.contains(id);
   }
 
   void joinChallenge(CommunityChallenge challenge) {

@@ -28,16 +28,32 @@ import 'package:infinity_wellness/app/features/wallet/screen/send_screen.dart';
 import 'package:infinity_wellness/app/features/wallet/screen/transaction_history_screen.dart';
 import 'package:infinity_wellness/app/features/wallet/screen/wallet_screen.dart';
 
+import 'package:infinity_wellness/app/features/auth/binding/onboarding_setup_binding.dart';
+import 'package:infinity_wellness/app/features/auth/screen/onboarding_setup_screen.dart';
+
+import 'package:infinity_wellness/app/features/splash/binding/splash_banner_binding.dart';
+import 'package:infinity_wellness/app/features/splash/screen/splash_banner_screen.dart';
+
 class AppPages {
   AppPages._();
 
-  static const initial = Routes.shell;
+  static const initial = Routes.splash;
 
   static final routes = [
+    GetPage(
+      name: Routes.splash,
+      page: () => const SplashBannerScreen(),
+      binding: SplashBannerBinding(),
+    ),
     GetPage(
       name: Routes.login,
       page: () => const LoginScreen(),
       binding: AuthBinding(),
+    ),
+    GetPage(
+      name: Routes.onboarding,
+      page: () => const OnboardingSetupScreen(),
+      binding: OnboardingSetupBinding(),
     ),
     GetPage(
       name: Routes.shell,

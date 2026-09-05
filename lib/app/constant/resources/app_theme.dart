@@ -14,17 +14,18 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       fontFamily: 'Poppins',
-      scaffoldBackgroundColor: AppColors.background,
+      scaffoldBackgroundColor: const Color(0xFFF8FAFC),
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.violet,
-        primary: AppColors.violet,
-        secondary: AppColors.accent,
+        seedColor: AppColors.primaryDarkBlue,
+        primary: AppColors.primaryDarkBlue,
+        secondary: AppColors.primary,
         surface: AppColors.surface,
+        outline: const Color(0xFFE2E8F0),
       ),
       appBarTheme: const AppBarTheme(
         centerTitle: false,
         elevation: 0,
-        backgroundColor: AppColors.background,
+        backgroundColor: Color(0xFFF8FAFC),
         foregroundColor: AppColors.textPrimary,
       ),
       cardTheme: CardThemeData(
@@ -32,62 +33,71 @@ class AppTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: const BorderSide(color: AppColors.border),
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.primaryDarkBlue,
           foregroundColor: AppColors.surface,
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-          shape: const StadiumBorder(),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           textStyle: const TextStyle(
             fontFamily: 'Poppins',
             fontWeight: FontWeight.w600,
+            fontSize: 14,
           ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.violet,
-          side: const BorderSide(color: AppColors.border),
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-          shape: const StadiumBorder(),
+          foregroundColor: AppColors.textPrimary,
+          side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           textStyle: const TextStyle(
             fontFamily: 'Poppins',
             fontWeight: FontWeight.w600,
+            fontSize: 14,
           ),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.primaryDarkBlue,
           foregroundColor: AppColors.surface,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-          shape: const StadiumBorder(),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           textStyle: const TextStyle(
             fontFamily: 'Poppins',
             fontWeight: FontWeight.w600,
+            fontSize: 14,
           ),
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: AppColors.violetSoft,
-        side: const BorderSide(color: AppColors.border),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+        backgroundColor: const Color(0xFFF1F5F9),
+        side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         labelStyle: const TextStyle(
           fontFamily: 'Poppins',
-          color: AppColors.violet,
+          color: AppColors.textPrimary,
           fontWeight: FontWeight.w600,
+          fontSize: 12,
         ),
       ),
       navigationBarTheme: const NavigationBarThemeData(
         backgroundColor: AppColors.surface,
-        indicatorColor: AppColors.violetSoft,
-        elevation: 2,
-        shadowColor: Color(0x1A231448),
+        indicatorColor: Color(0xFFF1F5F9),
+        elevation: 0,
         labelTextStyle: WidgetStatePropertyAll(
           TextStyle(
             fontFamily: 'Poppins',
@@ -104,41 +114,46 @@ class AppTheme {
           vertical: 14,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.violet, width: 1.5),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primaryDarkBlue, width: 1.5),
         ),
       ),
       textTheme: baseTextTheme.copyWith(
         headlineMedium: baseTextTheme.headlineMedium?.copyWith(
-          fontSize: 28,
+          fontSize: 22,
           fontWeight: FontWeight.w800,
           color: AppColors.textPrimary,
+          letterSpacing: -0.4,
         ),
         titleLarge: baseTextTheme.titleLarge?.copyWith(
-          fontSize: 20,
+          fontSize: 17,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
+          letterSpacing: -0.3,
         ),
         titleMedium: baseTextTheme.titleMedium?.copyWith(
-          fontSize: 16,
+          fontSize: 14.5,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
+          letterSpacing: -0.2,
         ),
         bodyLarge: baseTextTheme.bodyLarge?.copyWith(
-          fontSize: 16,
+          fontSize: 13.5,
           color: AppColors.textPrimary,
+          height: 1.45,
         ),
         bodyMedium: baseTextTheme.bodyMedium?.copyWith(
-          fontSize: 14,
+          fontSize: 12,
           color: AppColors.textSecondary,
+          height: 1.4,
         ),
       ),
     );

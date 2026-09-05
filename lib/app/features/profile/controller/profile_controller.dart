@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:infinity_wellness/app/core/base/base_controller.dart';
+import 'package:infinity_wellness/app/data/repositories/synergy_repository.dart';
+import 'package:infinity_wellness/app/data/repositories/user_repository.dart';
 import 'package:infinity_wellness/app/data/services/auth_service.dart';
 
 class ProfileAchievement {
@@ -39,12 +41,12 @@ class ProfileController extends BaseController {
   late final RxString userName =
       (_authService?.userName.value.isNotEmpty == true
               ? _authService!.userName.value
-              : 'Alex Morgan')
+              : 'Wellness User')
           .obs;
   late final RxString userEmail =
       (_authService?.userEmail.value.isNotEmpty == true
               ? _authService!.userEmail.value
-              : 'alex.morgan@infinitywellness.io')
+              : '')
           .obs;
   late final RxString avatarUrl = _authService?.avatarUrl ?? ''.obs;
   final memberTier = 'Infinity Wellness Explorer'.obs;
@@ -137,6 +139,15 @@ class ProfileController extends BaseController {
   int get unlockedAchievementsCount =>
       achievements.where((a) => a.isUnlocked).length;
 
+  UserRepository get _userRepository =>
+      Get.isRegistered<UserRepository>() ? Get.find<UserRepository>() : UserRepositoryImpl();
+
+  SynergyRepository get _synergyRepository =>
+      Get.isRegistered<SynergyRepository>() ? Get.find<SynergyRepository>() : SynergyRepositoryImpl();
+
+  // Invite code for 1-on-1 partner pairing
+  final inviteCode = 'INF789'.obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -148,6 +159,47 @@ class ProfileController extends BaseController {
       ever(auth.userEmail, (val) {
         if (val.isNotEmpty) userEmail.value = val;
       });
+      ever(auth.userProfile, (profile) {
+        if (profile != null) {
+          if (profile.displayName.isNotEmpty) userName.value = profile.displayName;
+          if (profile.email.isNotEmpty) userEmail.value = profile.email;
+          if (profile.inviteCode.isNotEmpty) inviteCode.value = profile.inviteCode;
+          weightKg.value = profile.weightKg;
+          heightCm.value = profile.heightCm;
+          activityLevel.value = profile.activityLevel;
+        }
+      });
+
+      // Load initial profile & partner
+      _loadProfileData();
+    }
+  }
+
+  Future<void> _loadProfileData() async {
+    final userId = _authService?.currentUser.value?.id ?? '';
+    if (userId.isNotEmpty) {
+      final profile = await _userRepository.getUserProfile(userId);
+      if (profile != null) {
+        if (profile.displayName.isNotEmpty) userName.value = profile.displayName;
+        if (profile.email.isNotEmpty) userEmail.value = profile.email;
+        if (profile.inviteCode.isNotEmpty) inviteCode.value = profile.inviteCode;
+        weightKg.value = profile.weightKg;
+        heightCm.value = profile.heightCm;
+        activityLevel.value = profile.activityLevel;
+      }
+
+      final activePair = await _synergyRepository.getActivePair(userId);
+      if (activePair != null && activePair.partnerProfile != null) {
+        partnerName.value = activePair.partnerProfile!.displayName;
+        partnerEmail.value = activePair.partnerProfile!.email;
+        synergyStreakDays.value = activePair.streakCount;
+        partnerStatus.value = activePair.isActive ? 'Active & Synced' : 'Pending';
+      } else {
+        partnerName.value = '';
+        partnerEmail.value = '';
+        partnerStatus.value = 'No Partner Linked';
+        synergyStreakDays.value = 0;
+      }
     }
   }
 
@@ -169,11 +221,11 @@ class ProfileController extends BaseController {
     'Very Active (Athletic)',
   ];
 
-  // 1-on-1 Synergy Partner
-  final partnerName = 'Jamie Lee'.obs;
-  final partnerEmail = 'jamie.lee@infinitywellness.io'.obs;
-  final partnerStatus = 'Active & Synced'.obs;
-  final synergyStreakDays = 12.obs;
+  // 1-on-1 Synergy Partner (Populated dynamically from Supabase)
+  final partnerName = ''.obs;
+  final partnerEmail = ''.obs;
+  final partnerStatus = 'No Partner Linked'.obs;
+  final synergyStreakDays = 0.obs;
 
   // Notification Preferences
   final hydrationRemindersEnabled = true.obs;
@@ -195,13 +247,29 @@ class ProfileController extends BaseController {
 
   void updateWeight(double newWeight) {
     weightKg.value = newWeight;
+    _persistHealthMetrics();
   }
 
   void updateHeight(double newHeight) {
     heightCm.value = newHeight;
+    _persistHealthMetrics();
   }
 
   void setActivityLevel(String level) {
     activityLevel.value = level;
+    _persistHealthMetrics();
+  }
+
+  void _persistHealthMetrics() {
+    final userId = _authService?.currentUser.value?.id ?? '';
+    if (userId.isNotEmpty) {
+      _userRepository.updateHealthMetrics(
+        userId: userId,
+        weightKg: weightKg.value,
+        heightCm: heightCm.value,
+        activityLevel: activityLevel.value,
+        dailyWaterGoalMl: calculatedDailyGoalMl,
+      );
+    }
   }
 }
