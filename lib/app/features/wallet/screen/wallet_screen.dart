@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:infinity_wellness/app/constant/resources/app_colors.dart';
 import 'package:infinity_wellness/app/constant/resources/app_string.dart';
 import 'package:infinity_wellness/app/constant/routing/app_route.dart';
 import 'package:infinity_wellness/app/core/base/base_view.dart';
@@ -18,37 +17,38 @@ class WalletScreen extends BaseView<WalletController> {
   @override
   Widget buildView(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: AppColors.ambientGradientColors,
+      color: WalletColors.background,
+      child: SafeArea(
+        bottom: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
+          children: [
+            // 1. Top Header: Icon, Title, Subtitle, 3-dot Menu
+            _buildTopHeader(context),
+            const SizedBox(height: WalletSpacing.lg),
+
+            // 2. Main Balance Card ("Wellness Points")
+            _buildBalanceCard(context),
+            const SizedBox(height: WalletSpacing.md),
+
+            // 3. Rewards Shop Portal Card (Soft cyan tint)
+            _buildShopPortal(context),
+            const SizedBox(height: WalletSpacing.md),
+
+            // 4. Transfer & Receive Hub Card (Segmented Control + Actions)
+            _buildTransferHubCard(context),
+            const SizedBox(height: WalletSpacing.md),
+
+            // 5. Activation / Security Card (when not activated or for access info)
+            _buildWalletStatusSection(context),
+          ],
         ),
-      ),
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 14, 18, 110),
-        children: [
-          // 1. Top Header: Title, Wallet Icon, Menu Action
-          _buildTopHeader(context),
-          const SizedBox(height: 16),
-
-          // 2. Main Balance Card
-          _buildBalanceCard(context),
-          const SizedBox(height: 16),
-
-          // 3. Small Shop Portal (In place of banner)
-          _buildShopPortal(context),
-          const SizedBox(height: 16),
-
-          // 4. Transfer & Receive Hub Card
-          _buildTransferHubCard(context),
-        ],
       ),
     );
   }
 
   // ---------------------------------------------------------------------------
-  // Top Header: Title & Action
+  // Top Header: Title, Subtitle, Wallet Icon & Options Menu
   // ---------------------------------------------------------------------------
   Widget _buildTopHeader(BuildContext context) {
     return Row(
@@ -58,22 +58,42 @@ class WalletScreen extends BaseView<WalletController> {
         Expanded(
           child: Row(
             children: [
+              // Wallet Icon Container with custom Shadcn blue styling
               Container(
-                width: 52,
-                height: 52,
-                decoration: const BoxDecoration(
-                  color: AppColors.mintSoft,
-                  shape: BoxShape.circle,
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: WalletColors.surface,
+                  borderRadius: BorderRadius.circular(WalletRadius.md),
+                  border: Border.all(
+                    color: WalletColors.primaryBorder,
+                    width: 1.2,
+                  ),
+                  boxShadow: WalletShadows.level1,
                 ),
                 child: const Center(
-                  child: Icon(
-                    Icons.account_balance_wallet_rounded,
-                    size: 28,
-                    color: AppColors.primaryVibrant,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Icon(
+                        Icons.account_balance_wallet_outlined,
+                        size: 26,
+                        color: WalletColors.primary,
+                      ),
+                      Positioned(
+                        right: 8,
+                        bottom: 9,
+                        child: Icon(
+                          Icons.water_drop_rounded,
+                          size: 10,
+                          color: WalletColors.primary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: WalletSpacing.md),
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,21 +101,12 @@ class WalletScreen extends BaseView<WalletController> {
                   children: [
                     Text(
                       'Ecosystem Wallet',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textDark,
-                        letterSpacing: -0.4,
-                      ),
+                      style: WalletTextStyles.heading2,
                     ),
                     SizedBox(height: 2),
                     Text(
                       'Wellness Points & streak perks',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSubtitle,
-                      ),
+                      style: WalletTextStyles.bodyMuted,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
@@ -104,25 +115,27 @@ class WalletScreen extends BaseView<WalletController> {
             ],
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: WalletSpacing.sm),
+        // 3-dot Menu Button
         GestureDetector(
           onTap: () => _showWalletMenu(context),
           child: Container(
-            width: 44,
-            height: 44,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
-              color: AppColors.surface.withValues(alpha: 0.6),
+              color: WalletColors.surface,
               shape: BoxShape.circle,
               border: Border.all(
-                color: AppColors.cyanPillBorder.withValues(alpha: 0.5),
+                color: WalletColors.border,
                 width: 1,
               ),
+              boxShadow: WalletShadows.level1,
             ),
             child: const Center(
               child: Icon(
-                Icons.more_horiz_rounded,
-                size: 26,
-                color: AppColors.textMuted,
+                Icons.more_vert_rounded,
+                size: 20,
+                color: WalletColors.textMuted,
               ),
             ),
           ),
@@ -135,39 +148,56 @@ class WalletScreen extends BaseView<WalletController> {
     Get.bottomSheet<void>(
       SafeArea(
         child: Container(
-          padding: const EdgeInsets.all(WalletSpacing.lg),
+          padding: const EdgeInsets.symmetric(
+            horizontal: WalletSpacing.lg,
+            vertical: WalletSpacing.md,
+          ),
           decoration: const BoxDecoration(
-            color: AppColors.surface,
+            color: WalletColors.surface,
             borderRadius: BorderRadius.vertical(
-              top: Radius.circular(26),
+              top: Radius.circular(WalletRadius.xl),
             ),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 40,
+                width: 36,
                 height: 4,
-                margin: const EdgeInsets.only(bottom: 18),
+                margin: const EdgeInsets.only(bottom: WalletSpacing.md),
                 decoration: BoxDecoration(
-                  color: AppColors.borderLight,
-                  borderRadius: BorderRadius.circular(99),
+                  color: WalletColors.border,
+                  borderRadius: BorderRadius.circular(WalletRadius.pill),
                 ),
               ),
               ListTile(
                 leading: Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(WalletSpacing.sm),
                   decoration: BoxDecoration(
-                    color: AppColors.cyanBadgeBg,
-                    borderRadius: BorderRadius.circular(10),
+                    color: WalletColors.primaryLight,
+                    borderRadius: BorderRadius.circular(WalletRadius.sm),
                   ),
-                  child: const Icon(Icons.history_rounded, color: AppColors.primary),
+                  child: const Icon(
+                    Icons.history_rounded,
+                    color: WalletColors.primary,
+                    size: 20,
+                  ),
                 ),
                 title: const Text(
                   AppString.walletHistoryTitle,
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: WalletColors.textPrimary,
+                  ),
                 ),
-                subtitle: const Text('View your points transactions'),
+                subtitle: const Text(
+                  'View your points transactions',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: WalletColors.textMuted,
+                  ),
+                ),
                 onTap: () {
                   Get.back<void>();
                   controller.openHistory();
@@ -175,18 +205,32 @@ class WalletScreen extends BaseView<WalletController> {
               ),
               ListTile(
                 leading: Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(WalletSpacing.sm),
                   decoration: BoxDecoration(
-                    color: AppColors.cyanBadgeBg,
-                    borderRadius: BorderRadius.circular(10),
+                    color: WalletColors.primaryLight,
+                    borderRadius: BorderRadius.circular(WalletRadius.sm),
                   ),
-                  child: const Icon(Icons.qr_code_2_rounded, color: AppColors.primary),
+                  child: const Icon(
+                    Icons.qr_code_2_rounded,
+                    color: WalletColors.primary,
+                    size: 20,
+                  ),
                 ),
                 title: const Text(
                   AppString.walletReceiveTitle,
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: WalletColors.textPrimary,
+                  ),
                 ),
-                subtitle: const Text('Show QR code to receive points'),
+                subtitle: const Text(
+                  'Show QR code to receive points',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: WalletColors.textMuted,
+                  ),
+                ),
                 onTap: () {
                   Get.back<void>();
                   controller.openReceive();
@@ -194,18 +238,32 @@ class WalletScreen extends BaseView<WalletController> {
               ),
               ListTile(
                 leading: Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(WalletSpacing.sm),
                   decoration: BoxDecoration(
-                    color: AppColors.cyanBadgeBg,
-                    borderRadius: BorderRadius.circular(10),
+                    color: WalletColors.primaryLight,
+                    borderRadius: BorderRadius.circular(WalletRadius.sm),
                   ),
-                  child: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.primary),
+                  child: const Icon(
+                    Icons.qr_code_scanner_rounded,
+                    color: WalletColors.primary,
+                    size: 20,
+                  ),
                 ),
                 title: const Text(
                   AppString.walletSendTitle,
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: WalletColors.textPrimary,
+                  ),
                 ),
-                subtitle: const Text('Scan QR code to transfer points'),
+                subtitle: const Text(
+                  'Scan QR code to transfer points',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: WalletColors.textMuted,
+                  ),
+                ),
                 onTap: () {
                   Get.back<void>();
                   controller.openSendScan();
@@ -220,49 +278,38 @@ class WalletScreen extends BaseView<WalletController> {
   }
 
   // ---------------------------------------------------------------------------
-  // Main Balance Card
+  // Main Balance Card ("Wellness Points")
   // ---------------------------------------------------------------------------
   Widget _buildBalanceCard(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
+      padding: const EdgeInsets.all(WalletSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        color: WalletColors.surface,
+        borderRadius: BorderRadius.circular(WalletRadius.xl),
+        border: Border.all(color: WalletColors.border, width: 1),
+        boxShadow: WalletShadows.level1,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header Row: Star Icon + Title + Refresh Button
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: AppColors.cyanBadgeBg,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.stars_rounded,
-                      color: AppColors.primary,
-                      size: 18,
-                    ),
+                  const Icon(
+                    Icons.star_border_rounded,
+                    color: WalletColors.primary,
+                    size: 24,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: WalletSpacing.sm),
                   const Text(
                     'Wellness Points',
                     style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textDark,
+                      fontSize: 16.5,
+                      fontWeight: FontWeight.w700,
+                      color: WalletColors.textPrimary,
                     ),
                   ),
                 ],
@@ -270,29 +317,36 @@ class WalletScreen extends BaseView<WalletController> {
               GestureDetector(
                 onTap: controller.refreshWalletBalance,
                 child: Container(
-                  padding: const EdgeInsets.all(7),
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
-                    color: AppColors.cyanPillBg,
-                    borderRadius: BorderRadius.circular(10),
+                    color: WalletColors.surface,
+                    borderRadius: BorderRadius.circular(WalletRadius.sm),
                     border: Border.all(
-                      color: AppColors.cyanPillBorder,
+                      color: WalletColors.border,
                       width: 1,
                     ),
                   ),
-                  child: const Icon(
-                    Icons.refresh_rounded,
-                    size: 18,
-                    color: AppColors.primaryDarkBlue,
+                  child: const Center(
+                    child: Icon(
+                      Icons.refresh_rounded,
+                      size: 18,
+                      color: WalletColors.textPrimary,
+                    ),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: WalletSpacing.md),
+
+          // Big Bold Blue Balance Display
           Obx(() {
-            final formattedBalance =
-                double.tryParse(controller.currentBalance.value)?.toStringAsFixed(0) ??
-                controller.currentBalance.value;
+            final rawBalance = controller.currentBalance.value;
+            final numeric = double.tryParse(rawBalance);
+            final formattedBalance = numeric != null
+                ? numeric.toStringAsFixed(numeric.truncateToDouble() == numeric ? 0 : 2)
+                : rawBalance;
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -303,81 +357,87 @@ class WalletScreen extends BaseView<WalletController> {
                   children: [
                     Text(
                       formattedBalance,
-                      style: const TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.textDark,
-                        letterSpacing: -1,
-                      ),
+                      style: WalletTextStyles.balanceDisplay,
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: WalletSpacing.xs + 2),
                     const Text(
                       'pts',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primaryDarkBlue,
-                      ),
+                      style: WalletTextStyles.balanceUnit,
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: WalletSpacing.xxs),
                 const Text(
                   'Earned from daily hydration & synergy streaks',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSlate,
-                  ),
+                  style: WalletTextStyles.bodyMuted,
                 ),
               ],
             );
           }),
-          const SizedBox(height: 16),
-          const Divider(height: 1, thickness: 1, color: AppColors.divider),
-          const SizedBox(height: 14),
+          const SizedBox(height: WalletSpacing.md),
+          const Divider(height: 1, thickness: 1, color: WalletColors.divider),
+          const SizedBox(height: WalletSpacing.md),
+
+          // Bottom Action & Streak Row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              // +50 Daily Streak Active Badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: WalletSpacing.sm + 2,
+                  vertical: WalletSpacing.xs + 1,
+                ),
                 decoration: BoxDecoration(
-                  color: AppColors.streakOrangeBg,
-                  borderRadius: BorderRadius.circular(12),
+                  color: WalletColors.successBg,
+                  borderRadius: BorderRadius.circular(WalletRadius.xs),
+                  border: Border.all(
+                    color: WalletColors.successBorder,
+                    width: 1,
+                  ),
                 ),
                 child: const Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.bolt_rounded, size: 16, color: AppColors.streakOrange),
-                    SizedBox(width: 4),
+                    Icon(
+                      Icons.check_circle_outline_rounded,
+                      size: 15,
+                      color: WalletColors.success,
+                    ),
+                    SizedBox(width: WalletSpacing.xs),
                     Text(
                       '+50 Daily Streak Active',
                       style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.streakOrangeDeep,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: WalletColors.success,
                       ),
                     ),
                   ],
                 ),
               ),
+              // View History Outlined Button
               GestureDetector(
                 onTap: controller.openHistory,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: WalletSpacing.md,
+                    vertical: WalletSpacing.xs + 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: AppColors.cyanPillBg,
-                    borderRadius: BorderRadius.circular(16),
+                    color: WalletColors.surface,
+                    borderRadius: BorderRadius.circular(WalletRadius.sm),
                     border: Border.all(
-                      color: AppColors.cyanPillBorder,
+                      color: WalletColors.border,
                       width: 1,
                     ),
                   ),
                   child: const Text(
-                    'view history',
+                    'View History',
                     style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textSubtitle,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: WalletColors.primary,
                     ),
                   ),
                 ),
@@ -390,55 +450,33 @@ class WalletScreen extends BaseView<WalletController> {
   }
 
   // ---------------------------------------------------------------------------
-  // ---------------------------------------------------------------------------
-  // Small Shop Portal Card (Connecting to Full Rewards Shop Mini-App)
+  // Small Shop Portal Card (Soft cyan tint matching Shadcn mockup)
   // ---------------------------------------------------------------------------
   Widget _buildShopPortal(BuildContext context) {
     return GestureDetector(
       onTap: () => Get.toNamed(Routes.rewardsShop),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(
+          horizontal: WalletSpacing.lg,
+          vertical: WalletSpacing.md + 2,
+        ),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0099FF),
-              Color(0xFF0066CC),
-            ],
+          color: WalletColors.shopBg,
+          borderRadius: BorderRadius.circular(WalletRadius.xl),
+          border: Border.all(
+            color: WalletColors.shopBorder,
+            width: 1,
           ),
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF0077BE).withValues(alpha: 0.28),
-              blurRadius: 14,
-              offset: const Offset(0, 5),
-            ),
-          ],
         ),
         child: Row(
           children: [
-            // Left Icon Badge
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.20),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.35),
-                  width: 1.5,
-                ),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.storefront_rounded,
-                  size: 26,
-                  color: Colors.white,
-                ),
-              ),
+            // Left Store Icon
+            const Icon(
+              Icons.storefront_outlined,
+              size: 28,
+              color: WalletColors.shopIcon,
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: WalletSpacing.md),
 
             // Middle Texts
             const Expanded(
@@ -451,47 +489,44 @@ class WalletScreen extends BaseView<WalletController> {
                       Text(
                         'Rewards Shop',
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.w700,
+                          color: WalletColors.textPrimary,
                           letterSpacing: -0.2,
                         ),
                       ),
-                      SizedBox(width: 6),
-                      Text(
-                        '✨',
-                        style: TextStyle(fontSize: 13),
-                      ),
+                      SizedBox(width: 4),
+                      Text('✨', style: TextStyle(fontSize: 13)),
                     ],
                   ),
                   SizedBox(height: 2),
                   Text(
-                    'Redeem points for bottles, drops & perks',
+                    'Redeem points for bottles, ...',
                     style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFFD6F2FE),
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
+                      color: WalletColors.textMuted,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: WalletSpacing.sm),
 
-            // Right CTA Capsule
+            // Right CTA Outlined Button ("Shop →")
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              padding: const EdgeInsets.symmetric(
+                horizontal: WalletSpacing.md,
+                vertical: WalletSpacing.xs + 2,
+              ),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                color: WalletColors.surface,
+                borderRadius: BorderRadius.circular(WalletRadius.sm),
+                border: Border.all(
+                  color: WalletColors.shopIcon,
+                  width: 1.2,
+                ),
               ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
@@ -500,15 +535,15 @@ class WalletScreen extends BaseView<WalletController> {
                     'Shop',
                     style: TextStyle(
                       fontSize: 12.5,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.primaryDarkBlue,
+                      fontWeight: FontWeight.w700,
+                      color: WalletColors.shopText,
                     ),
                   ),
                   SizedBox(width: 4),
                   Icon(
                     Icons.arrow_forward_rounded,
                     size: 14,
-                    color: AppColors.primaryDarkBlue,
+                    color: WalletColors.shopText,
                   ),
                 ],
               ),
@@ -520,72 +555,61 @@ class WalletScreen extends BaseView<WalletController> {
   }
 
   // ---------------------------------------------------------------------------
-  // Transfer & Receive Hub Card
+  // Transfer & Receive Hub Card (Segmented Control & Inline Actions)
   // ---------------------------------------------------------------------------
   Widget _buildTransferHubCard(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
+      padding: const EdgeInsets.all(WalletSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        color: WalletColors.surface,
+        borderRadius: BorderRadius.circular(WalletRadius.xl),
+        border: Border.all(color: WalletColors.border, width: 1),
+        boxShadow: WalletShadows.level1,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          // Card Header
+          const Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(5),
-                decoration: BoxDecoration(
-                  color: AppColors.cyanBadgeBg,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.swap_horiz_rounded,
-                  color: AppColors.primary,
-                  size: 18,
-                ),
+              Icon(
+                Icons.swap_horiz_rounded,
+                color: WalletColors.primary,
+                size: 22,
               ),
-              const SizedBox(width: 8),
-              const Text(
+              SizedBox(width: WalletSpacing.sm),
+              Text(
                 'Transfer & Receive',
                 style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textDark,
+                  fontSize: 16.5,
+                  fontWeight: FontWeight.w700,
+                  color: WalletColors.textPrimary,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: WalletSpacing.md),
 
-          // Mode Toggle (Receive / Send)
-          _buildModeToggle(),
-          const SizedBox(height: 16),
+          // Shadcn Segmented Control Tabs (Receive / Send)
+          _buildSegmentedTabs(),
+          const SizedBox(height: WalletSpacing.md),
 
-          // Body Content
+          // Body Content depending on wallet state & selected tab
           Obx(() {
             switch (controller.walletState.value) {
               case WalletState.loading:
                 return const Center(
                   child: Padding(
-                    padding: EdgeInsets.all(24),
-                    child: CircularProgressIndicator(),
+                    padding: EdgeInsets.all(WalletSpacing.xl),
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(WalletColors.primary),
+                    ),
                   ),
                 );
               case WalletState.configMissing:
               case WalletState.error:
                 return _buildErrorState();
               case WalletState.ready:
-                return _buildActivationPanel();
               case WalletState.activated:
                 return controller.rewardsMode.value == 0
                     ? _buildReceivePanel(context)
@@ -597,106 +621,76 @@ class WalletScreen extends BaseView<WalletController> {
     );
   }
 
-  Widget _buildModeToggle() {
+  Widget _buildSegmentedTabs() {
     return Obx(() {
-      final active = controller.rewardsMode.value;
+      final activeIndex = controller.rewardsMode.value;
 
       return Container(
-        padding: const EdgeInsets.all(4),
+        padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
-          color: AppColors.cyanToggleBg,
-          borderRadius: BorderRadius.circular(16),
+          color: WalletColors.tabBg,
+          borderRadius: BorderRadius.circular(WalletRadius.md),
         ),
         child: Row(
           children: [
+            // Receive Tab
             Expanded(
               child: GestureDetector(
                 onTap: () => controller.rewardsMode.value = 0,
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
+                  duration: const Duration(milliseconds: 180),
                   padding: const EdgeInsets.symmetric(vertical: 9),
                   decoration: BoxDecoration(
-                    color: active == 0 ? AppColors.surface : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: active == 0
-                        ? [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.06),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ]
-                        : null,
+                    color: activeIndex == 0
+                        ? WalletColors.primary
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(WalletRadius.sm),
+                    boxShadow: activeIndex == 0 ? WalletShadows.level1 : null,
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.qr_code_2_rounded,
-                        size: 18,
-                        color: active == 0
-                            ? AppColors.primaryDarkBlue
-                            : AppColors.textMuted,
+                  child: Center(
+                    child: Text(
+                      AppString.walletReceiveTitle,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: activeIndex == 0
+                            ? FontWeight.w700
+                            : FontWeight.w600,
+                        color: activeIndex == 0
+                            ? WalletColors.textOnPrimary
+                            : WalletColors.textMuted,
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        AppString.walletReceiveTitle,
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight:
-                              active == 0 ? FontWeight.w800 : FontWeight.w600,
-                          color: active == 0
-                              ? AppColors.textDark
-                              : AppColors.textMuted,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
+            // Send Tab
             Expanded(
               child: GestureDetector(
                 onTap: () => controller.rewardsMode.value = 1,
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
+                  duration: const Duration(milliseconds: 180),
                   padding: const EdgeInsets.symmetric(vertical: 9),
                   decoration: BoxDecoration(
-                    color: active == 1 ? AppColors.surface : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: active == 1
-                        ? [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.06),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ]
-                        : null,
+                    color: activeIndex == 1
+                        ? WalletColors.primary
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(WalletRadius.sm),
+                    boxShadow: activeIndex == 1 ? WalletShadows.level1 : null,
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.send_rounded,
-                        size: 18,
-                        color: active == 1
-                            ? AppColors.primaryDarkBlue
-                            : AppColors.textMuted,
+                  child: Center(
+                    child: Text(
+                      AppString.walletSendTitle,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: activeIndex == 1
+                            ? FontWeight.w700
+                            : FontWeight.w600,
+                        color: activeIndex == 1
+                            ? WalletColors.textOnPrimary
+                            : WalletColors.textMuted,
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        AppString.walletSendTitle,
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight:
-                              active == 1 ? FontWeight.w800 : FontWeight.w600,
-                          color: active == 1
-                              ? AppColors.textDark
-                              : AppColors.textMuted,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -707,115 +701,140 @@ class WalletScreen extends BaseView<WalletController> {
     });
   }
 
-  Widget _buildActivationPanel() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: const BoxDecoration(
-            color: AppColors.cyanPillBg,
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.lock_open_rounded,
-            size: 32,
-            color: AppColors.primaryDarkBlue,
-          ),
-        ),
-        const SizedBox(height: 12),
-        const Text(
-          'Activate Your Points Wallet',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textDark,
-          ),
-        ),
-        const SizedBox(height: 6),
-        const Text(
-          AppString.walletReadyToActivateMessage,
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 13, color: AppColors.textMuted),
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: controller.activateWallet,
-            icon: const Icon(Icons.account_balance_wallet_rounded, size: 18),
-            label: const Text(AppString.walletActivateButton),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primaryVibrant,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
+  // ---------------------------------------------------------------------------
+  // Receive Panel with QR Code and Reward ID Copy Card
+  // ---------------------------------------------------------------------------
   Widget _buildReceivePanel(BuildContext context) {
     final access = controller.walletAccess.value;
     final publicKey = access?.publicKey ?? '';
 
     return Column(
       children: [
+        // Dual Quick Action Cards (Receive / Send overview)
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: WalletColors.surface,
+                  borderRadius: BorderRadius.circular(WalletRadius.md),
+                  border: Border.all(
+                    color: WalletColors.border,
+                    width: 1,
+                  ),
+                ),
+                child: const Column(
+                  children: [
+                    Icon(
+                      Icons.qr_code_scanner_rounded,
+                      size: 28,
+                      color: WalletColors.primary,
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      'Receive',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: WalletColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: WalletSpacing.md),
+            Expanded(
+              child: GestureDetector(
+                onTap: () => controller.rewardsMode.value = 1,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    color: WalletColors.surface,
+                    borderRadius: BorderRadius.circular(WalletRadius.md),
+                    border: Border.all(
+                      color: WalletColors.border,
+                      width: 1,
+                    ),
+                  ),
+                  child: const Column(
+                    children: [
+                      Icon(
+                        Icons.send_rounded,
+                        size: 28,
+                        color: WalletColors.primary,
+                      ),
+                      SizedBox(height: 6),
+                      Text(
+                        'Send',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: WalletColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: WalletSpacing.lg),
+
+        // QR Container
         Center(
           child: Container(
-            width: 190,
-            height: 190,
-            padding: const EdgeInsets.all(16),
+            width: 180,
+            height: 180,
+            padding: const EdgeInsets.all(WalletSpacing.md),
             decoration: BoxDecoration(
-              color: AppColors.iceBlueBgSoft,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: AppColors.cyanPillBorder, width: 1.5),
+              color: WalletColors.surface,
+              borderRadius: BorderRadius.circular(WalletRadius.lg),
+              border: Border.all(color: WalletColors.border, width: 1.5),
+              boxShadow: WalletShadows.level1,
             ),
             child: publicKey.isEmpty
                 ? const Icon(
                     Icons.qr_code_2_rounded,
-                    size: 110,
-                    color: AppColors.primaryVibrant,
+                    size: 100,
+                    color: WalletColors.primary,
                   )
                 : QrImageView(
                     data: publicKey,
                     version: QrVersions.auto,
                     eyeStyle: const QrEyeStyle(
                       eyeShape: QrEyeShape.square,
-                      color: AppColors.primaryVibrant,
+                      color: WalletColors.primary,
                     ),
                     dataModuleStyle: const QrDataModuleStyle(
                       dataModuleShape: QrDataModuleShape.square,
-                      color: AppColors.primaryVibrant,
+                      color: WalletColors.primary,
                     ),
-                    backgroundColor: AppColors.iceBlueBgSoft,
+                    backgroundColor: WalletColors.surface,
                     gapless: false,
                   ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: WalletSpacing.md),
         const Text(
           'Show this QR code to receive points from friends',
           textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textSlate,
-          ),
+          style: WalletTextStyles.bodyMuted,
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: WalletSpacing.md),
 
-        // Reward ID with copy button
+        // Your Reward ID & Copy Button
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          padding: const EdgeInsets.symmetric(
+            horizontal: WalletSpacing.md,
+            vertical: WalletSpacing.sm + 2,
+          ),
           decoration: BoxDecoration(
-            color: AppColors.iceBlueBg,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.cyanBadgeBg),
+            color: WalletColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(WalletRadius.md),
+            border: Border.all(color: WalletColors.border),
           ),
           child: Row(
             children: [
@@ -826,20 +845,15 @@ class WalletScreen extends BaseView<WalletController> {
                     const Text(
                       'Your Reward ID',
                       style: TextStyle(
-                        fontSize: 10.5,
+                        fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textSlate,
+                        color: WalletColors.textMuted,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       _shortRewardId(publicKey),
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontFamily: 'monospace',
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textDark,
-                      ),
+                      style: WalletTextStyles.mono,
                     ),
                   ],
                 ),
@@ -847,23 +861,30 @@ class WalletScreen extends BaseView<WalletController> {
               GestureDetector(
                 onTap: publicKey.isEmpty ? null : controller.copyPublicKey,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: WalletSpacing.md,
+                    vertical: WalletSpacing.xs + 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: AppColors.cyanPillBg,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.cyanPillBorder),
+                    color: WalletColors.primaryLight,
+                    borderRadius: BorderRadius.circular(WalletRadius.sm),
+                    border: Border.all(color: WalletColors.primaryBorder),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.copy_rounded, size: 14, color: AppColors.primaryDarkBlue),
+                      Icon(
+                        Icons.copy_rounded,
+                        size: 13,
+                        color: WalletColors.primary,
+                      ),
                       SizedBox(width: 4),
                       Text(
                         'Copy',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.primaryDarkBlue,
+                          color: WalletColors.primary,
                         ),
                       ),
                     ],
@@ -877,24 +898,121 @@ class WalletScreen extends BaseView<WalletController> {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Send Panel with Inline Live Camera QR Scanner
+  // ---------------------------------------------------------------------------
   Widget _buildSendPanel(BuildContext context) {
     return _InlineWalletScanner(controller: controller);
   }
 
+  // ---------------------------------------------------------------------------
+  // Standalone Activation / Security Section
+  // ---------------------------------------------------------------------------
+  Widget _buildWalletStatusSection(BuildContext context) {
+    return Obx(() {
+      final isActivated = controller.walletState.value == WalletState.activated;
+
+      if (isActivated) {
+        return const SizedBox.shrink();
+      }
+
+      return Container(
+        padding: const EdgeInsets.all(WalletSpacing.lg),
+        decoration: BoxDecoration(
+          color: WalletColors.surface,
+          borderRadius: BorderRadius.circular(WalletRadius.xl),
+          border: Border.all(color: WalletColors.border, width: 1),
+          boxShadow: WalletShadows.level1,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: WalletColors.primaryLight,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: WalletColors.primaryBorder),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.lock_outline_rounded,
+                      size: 18,
+                      color: WalletColors.primary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: WalletSpacing.md),
+                const Expanded(
+                  child: Text(
+                    'Activate Your Points Wallet',
+                    style: TextStyle(
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w700,
+                      color: WalletColors.textPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: WalletSpacing.sm),
+            const Text(
+              'Activate your wallet by selecting your customer access ZIP file from this phone.',
+              style: WalletTextStyles.bodyMuted,
+            ),
+            const SizedBox(height: WalletSpacing.md),
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: FilledButton.icon(
+                onPressed: controller.activateWallet,
+                icon: const Icon(
+                  Icons.account_balance_wallet_outlined,
+                  size: 18,
+                  color: WalletColors.textOnPrimary,
+                ),
+                label: const Text(
+                  AppString.walletActivateButton,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: WalletColors.textOnPrimary,
+                  ),
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: WalletColors.primary,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(WalletRadius.md),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
   Widget _buildErrorState() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(WalletSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.errorSoft,
-        borderRadius: BorderRadius.circular(16),
+        color: WalletColors.errorBg,
+        borderRadius: BorderRadius.circular(WalletRadius.md),
+        border: Border.all(color: WalletColors.errorBorder),
       ),
       child: Text(
         controller.message.value.isNotEmpty
             ? controller.message.value
             : 'Wallet configuration error. Please try again.',
         style: const TextStyle(
-          color: AppColors.error,
+          color: WalletColors.error,
           fontWeight: FontWeight.w600,
+          fontSize: 13,
         ),
       ),
     );
@@ -911,6 +1029,9 @@ class WalletScreen extends BaseView<WalletController> {
   }
 }
 
+// =============================================================================
+// Live Inline QR Scanner with Shadcn Styled Reticle & Helpers
+// =============================================================================
 class _InlineWalletScanner extends StatefulWidget {
   const _InlineWalletScanner({required this.controller});
 
@@ -959,7 +1080,7 @@ class _InlineWalletScannerState extends State<_InlineWalletScanner>
       _shellTabWorker = ever(
         Get.find<ShellController>().currentIndex,
         (tabIndex) {
-          if (tabIndex == 0) {
+          if (tabIndex == 3) {
             unawaited(_startScanner());
           } else {
             unawaited(_stopScanner());
@@ -1096,25 +1217,19 @@ class _InlineWalletScannerState extends State<_InlineWalletScanner>
         // Camera Viewfinder Box
         Center(
           child: Container(
-            width: 210,
-            height: 210,
+            width: 200,
+            height: 200,
             decoration: BoxDecoration(
               color: Colors.black87,
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(WalletRadius.lg),
               border: Border.all(
-                color: AppColors.cyanPillBorder,
+                color: WalletColors.primaryBorder,
                 width: 1.5,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primaryDarkBlue.withValues(alpha: 0.12),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              boxShadow: WalletShadows.level2,
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(WalletRadius.lg - 2),
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -1125,7 +1240,7 @@ class _InlineWalletScannerState extends State<_InlineWalletScanner>
                     placeholderBuilder: (_) => const Center(
                       child: CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          AppColors.primary,
+                          WalletColors.primary,
                         ),
                       ),
                     ),
@@ -1134,27 +1249,27 @@ class _InlineWalletScannerState extends State<_InlineWalletScanner>
 
                   // Reticle and Scan Beam
                   CustomPaint(
-                    painter: _ScannerReticlePainter(
+                    painter: _ShadcnScannerReticlePainter(
                       scanProgress: _isRunning ? _scanAnimation.value : 0.5,
                       showScanLine: _isRunning,
                     ),
                   ),
 
-                  // Torch Toggle Button (Top Right)
+                  // Torch Toggle Button
                   if (_isRunning)
                     Positioned(
-                      top: 10,
-                      right: 10,
+                      top: 8,
+                      right: 8,
                       child: GestureDetector(
                         onTap: _toggleTorch,
                         child: Container(
-                          padding: const EdgeInsets.all(7),
+                          padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.45),
+                            color: Colors.black.withValues(alpha: 0.5),
                             shape: BoxShape.circle,
                             border: Border.all(
                               color: _isTorchOn
-                                  ? AppColors.primary
+                                  ? WalletColors.primary
                                   : Colors.white38,
                               width: 1.2,
                             ),
@@ -1163,8 +1278,8 @@ class _InlineWalletScannerState extends State<_InlineWalletScanner>
                             _isTorchOn
                                 ? Icons.flash_on_rounded
                                 : Icons.flash_off_rounded,
-                            size: 16,
-                            color: _isTorchOn ? AppColors.primary : Colors.white,
+                            size: 15,
+                            color: _isTorchOn ? WalletColors.primary : Colors.white,
                           ),
                         ),
                       ),
@@ -1174,7 +1289,7 @@ class _InlineWalletScannerState extends State<_InlineWalletScanner>
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: WalletSpacing.md),
 
         // Status Feedback
         Row(
@@ -1185,31 +1300,30 @@ class _InlineWalletScannerState extends State<_InlineWalletScanner>
                   ? Icons.hourglass_top_rounded
                   : Icons.qr_code_scanner_rounded,
               size: 15,
-              color: AppColors.primaryDarkBlue,
+              color: WalletColors.primary,
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: WalletSpacing.xs),
             Flexible(
               child: Text(
                 _status,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSlate,
-                ),
+                style: WalletTextStyles.bodyMuted,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: WalletSpacing.md),
 
         // Bottom Action: Paste Copied ID
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          padding: const EdgeInsets.symmetric(
+            horizontal: WalletSpacing.md,
+            vertical: WalletSpacing.sm + 2,
+          ),
           decoration: BoxDecoration(
-            color: AppColors.iceBlueBg,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.cyanBadgeBg),
+            color: WalletColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(WalletRadius.md),
+            border: Border.all(color: WalletColors.border),
           ),
           child: Row(
             children: [
@@ -1220,18 +1334,18 @@ class _InlineWalletScannerState extends State<_InlineWalletScanner>
                     Text(
                       'Have a Copied ID?',
                       style: TextStyle(
-                        fontSize: 10.5,
+                        fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textSlate,
+                        color: WalletColors.textMuted,
                       ),
                     ),
                     SizedBox(height: 2),
                     Text(
                       'Paste from clipboard to send',
                       style: TextStyle(
-                        fontSize: 12.5,
+                        fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textDark,
+                        color: WalletColors.textPrimary,
                       ),
                     ),
                   ],
@@ -1241,21 +1355,21 @@ class _InlineWalletScannerState extends State<_InlineWalletScanner>
                 onTap: _pasteFromClipboard,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
+                    horizontal: WalletSpacing.md,
+                    vertical: WalletSpacing.xs + 2,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.cyanPillBg,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.cyanPillBorder),
+                    color: WalletColors.primaryLight,
+                    borderRadius: BorderRadius.circular(WalletRadius.sm),
+                    border: Border.all(color: WalletColors.primaryBorder),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.content_paste_rounded,
-                        size: 14,
-                        color: AppColors.primaryDarkBlue,
+                        size: 13,
+                        color: WalletColors.primary,
                       ),
                       SizedBox(width: 4),
                       Text(
@@ -1263,7 +1377,7 @@ class _InlineWalletScannerState extends State<_InlineWalletScanner>
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.primaryDarkBlue,
+                          color: WalletColors.primary,
                         ),
                       ),
                     ],
@@ -1287,9 +1401,9 @@ class _InlineWalletScannerState extends State<_InlineWalletScanner>
             const Icon(
               Icons.camera_alt_outlined,
               color: Colors.white54,
-              size: 38,
+              size: 36,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               _isPermissionDenied ? 'Permission Denied' : 'Camera Preview',
               style: const TextStyle(
@@ -1308,8 +1422,8 @@ class _InlineWalletScannerState extends State<_InlineWalletScanner>
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryDarkBlue,
-                    borderRadius: BorderRadius.circular(8),
+                    color: WalletColors.primary,
+                    borderRadius: BorderRadius.circular(WalletRadius.xs),
                   ),
                   child: const Text(
                     'Retry',
@@ -1339,8 +1453,8 @@ class _InlineWalletScannerState extends State<_InlineWalletScanner>
   }
 }
 
-class _ScannerReticlePainter extends CustomPainter {
-  _ScannerReticlePainter({
+class _ShadcnScannerReticlePainter extends CustomPainter {
+  _ShadcnScannerReticlePainter({
     required this.scanProgress,
     required this.showScanLine,
   });
@@ -1350,13 +1464,13 @@ class _ScannerReticlePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    const cornerLength = 22.0;
+    const cornerLength = 20.0;
     const cornerRadius = 6.0;
-    const padding = 18.0;
+    const padding = 16.0;
 
     final paint = Paint()
-      ..color = AppColors.primary
-      ..strokeWidth = 3.5
+      ..color = WalletColors.primary
+      ..strokeWidth = 3.0
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
@@ -1415,9 +1529,9 @@ class _ScannerReticlePainter extends CustomPainter {
       final linePaint = Paint()
         ..shader = LinearGradient(
           colors: [
-            AppColors.primary.withValues(alpha: 0.0),
-            AppColors.primary,
-            AppColors.primary.withValues(alpha: 0.0),
+            WalletColors.primary.withValues(alpha: 0.0),
+            WalletColors.primary,
+            WalletColors.primary.withValues(alpha: 0.0),
           ],
         ).createShader(Rect.fromLTWH(left, scanY, right - left, 2))
         ..strokeWidth = 2.0;
@@ -1431,7 +1545,7 @@ class _ScannerReticlePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _ScannerReticlePainter oldDelegate) {
+  bool shouldRepaint(covariant _ShadcnScannerReticlePainter oldDelegate) {
     return oldDelegate.scanProgress != scanProgress ||
         oldDelegate.showScanLine != showScanLine;
   }

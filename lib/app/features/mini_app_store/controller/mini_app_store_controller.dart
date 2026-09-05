@@ -44,13 +44,13 @@ class MiniAppStoreController extends BaseController {
   final miniApps = <MiniAppModule>[
     MiniAppModule(
       id: 'medical-news',
-      title: 'Medical News & Myths',
-      subtitle: 'Curated by medical students & doctors',
+      title: 'News',
+      subtitle: 'Medical news & myth-busting',
       category: 'Health Literacy',
       description:
           'Combat false health trends with verified evidence-based articles, interactive Myth vs. Fact breakdowns, and digital health Q&A.',
       icon: Icons.article_rounded,
-      colorHex: 0xFF6200EE,
+      colorHex: 0xFF2563EB,
       features: [
         'Evidence-based wellness articles',
         'Interactive Myth vs. Fact cards',
@@ -61,13 +61,13 @@ class MiniAppStoreController extends BaseController {
     ),
     MiniAppModule(
       id: 'smart-hydration',
-      title: 'Smart Hydration Reminder',
-      subtitle: 'Dynamic water goals & intake logger',
+      title: 'Hydration',
+      subtitle: 'Smart daily water logger',
       category: 'Vitality & Intake',
       description:
           'Smart daily water calculator based on your weight, height, and activity level. One-tap logging and automated push reminders.',
       icon: Icons.water_drop_rounded,
-      colorHex: 0xFF00A3FF,
+      colorHex: 0xFF0284C7,
       features: [
         'Dynamic smart water calculator',
         'Frictionless 1-tap logging',
@@ -78,13 +78,13 @@ class MiniAppStoreController extends BaseController {
     ),
     MiniAppModule(
       id: 'friend-synergy',
-      title: 'Friend Synergy (1-on-1)',
-      subtitle: 'Mutual accountability for pairs',
+      title: 'Synergy',
+      subtitle: '1-on-1 partner accountability',
       category: 'Mutual Accountability',
       description:
           'Dedicated 1-on-1 accountability for partners or best friends. Send mutual nudges, build shared Synergy Streaks, and view synced real-time progress.',
       icon: Icons.people_alt_rounded,
-      colorHex: 0xFF005C99,
+      colorHex: 0xFF0D9488,
       features: [
         'Mutual hydration & screen break nudges',
         'Shared Synergy Streak system',
@@ -95,13 +95,13 @@ class MiniAppStoreController extends BaseController {
     ),
     MiniAppModule(
       id: 'rewards-shop',
-      title: 'Wellness Rewards Shop',
-      subtitle: 'Redeem perks, gear & power-ups',
+      title: 'Shop',
+      subtitle: 'Perks, gear & vouchers',
       category: 'Rewards & Gear',
       description:
           'Explore the official catalog of Infinity PureFlow™ smart bottles, HydroMax+ electrolyte drops, synergy streak freeze shields, discount vouchers, and UI themes.',
       icon: Icons.storefront_rounded,
-      colorHex: 0xFF0089D8,
+      colorHex: 0xFF2563EB,
       features: [
         'Official UV-C smart bottles & drops',
         'Instant discount promo codes',
@@ -112,8 +112,8 @@ class MiniAppStoreController extends BaseController {
     ),
     MiniAppModule(
       id: 'achievements',
-      title: 'Achievements & Badges',
-      subtitle: 'Milestones, streaks & badges',
+      title: 'Achievements',
+      subtitle: 'Milestones & badges',
       category: 'Rewards & Gear',
       description:
           'Track wellness badges, unlock streak achievements, and earn rewards points.',

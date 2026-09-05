@@ -1,28 +1,54 @@
 import 'package:flutter/material.dart';
-import 'package:infinity_wellness/app/constant/resources/app_dimens.dart';
+import 'package:infinity_wellness/app/features/wallet/utility/wallet_ui_metrics.dart';
 
 class SectionCard extends StatelessWidget {
   const SectionCard({
     super.key,
     this.title,
     required this.child,
+    this.padding,
+    this.trailing,
   });
 
   final String? title;
   final Widget child;
+  final EdgeInsetsGeometry? padding;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Container(
+      decoration: BoxDecoration(
+        color: WalletColors.surface,
+        borderRadius: BorderRadius.circular(WalletRadius.lg),
+        border: Border.all(color: WalletColors.border, width: 1),
+        boxShadow: WalletShadows.level1,
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: padding ?? const EdgeInsets.all(WalletSpacing.lg),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
             if (title != null) ...[
-              Text(title!, style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: AppDimens.itemGap),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      title!,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: WalletColors.textPrimary,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                  ),
+                  if (trailing != null) trailing!,
+                ],
+              ),
+              const SizedBox(height: WalletSpacing.md),
             ],
             child,
           ],

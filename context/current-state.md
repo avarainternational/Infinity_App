@@ -29,9 +29,9 @@ The repository is structured to migrate from the initial monolithic prototype sh
 ## Transition Status
 
 1. **Context & PRD Alignment**: Completed context files alignment (`AGENTS.md`, `project-overview.md`, `current-state.md`, `architecture.md`, `code-standards.md`, `ui-context.md`, `progress-tracker.md`, `decision-log.md`, `ai-workflow-rules.md`).
-2. **UI & Navigation Migration**: Established the 5-tab Super App shell (Home, Feed, Mini-App Store, Wallet, Profile) as default initial route (`Routes.shell`).
-3. **Authentication & Supabase**: Integrated `supabase_flutter` with Google OAuth sign-in, deep-link callback filters (`io.supabase.infinitywellness://login-callback/`), reactive `AuthService`, branded `LoginScreen` (`Routes.login`), and profile integration with Sign Out (bypassed on launch to land directly on Home).
-4. **Domain Logic & Data Layer**: Structuring typed services and repositories for PostgreSQL models and Realtime channels.
+2. **UI & Navigation Migration**: Established the 5-tab Super App shell (Home, Feed, Mini-App Store, Wallet, Profile) with dynamic startup routing (`Routes.login` for unauthenticated sessions, `Routes.shell` for authenticated sessions).
+3. **Authentication & Supabase**: Integrated live `supabase_flutter` with Email & Password sign-in / sign-up (including biometrics onboarding for weight, height, activity level, and calculated daily water goal), Google OAuth, deep-link callback filters (`io.supabase.infinitywellness://login-callback/`), reactive `AuthService`, and instant PostgreSQL profile synchronization. Package name migrated to `com.infinitywellness.app`.
+4. **Domain Logic & Data Layer**: Typed repositories (`UserRepository`, `HydrationRepository`, `SynergyRepository`) backed by Supabase PostgreSQL and Realtime subscriptions with offline fallbacks.
 
 ## Implementation Guardrails
 

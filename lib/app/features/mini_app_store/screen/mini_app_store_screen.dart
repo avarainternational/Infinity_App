@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:infinity_wellness/app/constant/resources/app_colors.dart';
 import 'package:infinity_wellness/app/core/base/base_view.dart';
 import 'package:infinity_wellness/app/features/mini_app_store/controller/mini_app_store_controller.dart';
+import 'package:infinity_wellness/app/features/wallet/utility/wallet_ui_metrics.dart';
 
 class MiniAppStoreScreen extends BaseView<MiniAppStoreController> {
   const MiniAppStoreScreen({super.key});
@@ -10,26 +10,29 @@ class MiniAppStoreScreen extends BaseView<MiniAppStoreController> {
   @override
   Widget buildView(BuildContext context) {
     return Container(
-      color: Colors.white,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 14, 18, 110),
-        children: [
-          // 1. Top Header: Title, Icon & Subtitle
-          _buildTopHeader(context),
-          const SizedBox(height: 24),
+      color: WalletColors.background,
+      child: SafeArea(
+        bottom: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
+          children: [
+            // 1. Top Header: Title, Icon & Subtitle
+            _buildTopHeader(context),
+            const SizedBox(height: WalletSpacing.lg),
 
-          // 2. Vertical Category Sections (Icon + Caption Below)
-          Obx(() {
-            final grouped = controller.groupedMiniApps;
+            // 2. Vertical Category Sections
+            Obx(() {
+              final grouped = controller.groupedMiniApps;
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: grouped.entries.map((entry) {
-                return _buildCategorySection(context, entry.key, entry.value);
-              }).toList(),
-            );
-          }),
-        ],
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: grouped.entries.map((entry) {
+                  return _buildCategorySection(context, entry.key, entry.value);
+                }).toList(),
+              );
+            }),
+          ],
+        ),
       ),
     );
   }
@@ -46,21 +49,26 @@ class MiniAppStoreScreen extends BaseView<MiniAppStoreController> {
           child: Row(
             children: [
               Container(
-                width: 52,
-                height: 52,
-                decoration: const BoxDecoration(
-                  color: AppColors.mintSoft,
-                  shape: BoxShape.circle,
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: WalletColors.surface,
+                  borderRadius: BorderRadius.circular(WalletRadius.md),
+                  border: Border.all(
+                    color: WalletColors.primaryBorder,
+                    width: 1.2,
+                  ),
+                  boxShadow: WalletShadows.level1,
                 ),
                 child: const Center(
                   child: Icon(
                     Icons.grid_view_rounded,
-                    size: 28,
-                    color: AppColors.primaryVibrant,
+                    size: 26,
+                    color: WalletColors.primary,
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: WalletSpacing.md),
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,21 +76,12 @@ class MiniAppStoreScreen extends BaseView<MiniAppStoreController> {
                   children: [
                     Text(
                       'Mini-App Store',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textDark,
-                        letterSpacing: -0.4,
-                      ),
+                      style: WalletTextStyles.heading2,
                     ),
                     SizedBox(height: 2),
                     Text(
                       'Directory of dedicated wellness modules',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSubtitle,
-                      ),
+                      style: WalletTextStyles.bodyMuted,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
@@ -104,41 +103,36 @@ class MiniAppStoreScreen extends BaseView<MiniAppStoreController> {
     List<MiniAppModule> apps,
   ) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: WalletSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Category Title Header
           Padding(
-            padding: const EdgeInsets.only(left: 2, bottom: 14),
+            padding: const EdgeInsets.only(left: 2, bottom: WalletSpacing.md),
             child: Row(
               children: [
                 Container(
-                  width: 4,
+                  width: 3.5,
                   height: 14,
                   decoration: BoxDecoration(
-                    color: AppColors.primaryVibrant,
+                    color: WalletColors.primary,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: WalletSpacing.sm),
                 Text(
                   categoryName,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textDark,
-                    letterSpacing: -0.2,
-                  ),
+                  style: WalletTextStyles.heading3,
                 ),
               ],
             ),
           ),
 
-          // App Icons with Captions Below (No white container card)
+          // App Icons with Captions Below
           Wrap(
-            spacing: 18,
-            runSpacing: 18,
+            spacing: 16,
+            runSpacing: 16,
             children: apps
                 .map((app) => _buildMiniAppGridItem(context, app))
                 .toList(),
@@ -156,63 +150,46 @@ class MiniAppStoreScreen extends BaseView<MiniAppStoreController> {
 
     return GestureDetector(
       onTap: () => controller.launchModule(app),
+      behavior: HitTestBehavior.opaque,
       child: SizedBox(
-        width: 80,
+        width: 68,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Icon Squircle
+            // Icon Squircle (Exact match with Quick Mini-Apps)
             Container(
-              width: 58,
-              height: 58,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
-                color: AppColors.iceBlueBgSoft,
-                borderRadius: BorderRadius.circular(18),
+                color: moduleColor.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: AppColors.iceBlueBorder,
+                  color: moduleColor.withValues(alpha: 0.18),
                   width: 1,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
+                boxShadow: WalletShadows.level1,
               ),
               child: Center(
-                child: Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: moduleColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      app.icon,
-                      color: moduleColor,
-                      size: 23,
-                    ),
-                  ),
+                child: Icon(
+                  app.icon,
+                  color: moduleColor,
+                  size: 23,
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 5),
 
             // Caption Text Below Icon
             Text(
               app.title,
               textAlign: TextAlign.center,
-              maxLines: 2,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 11.5,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textDark,
-                height: 1.2,
-                letterSpacing: -0.2,
+                color: WalletColors.textPrimary,
               ),
             ),
           ],
@@ -221,5 +198,3 @@ class MiniAppStoreScreen extends BaseView<MiniAppStoreController> {
     );
   }
 }
-
-

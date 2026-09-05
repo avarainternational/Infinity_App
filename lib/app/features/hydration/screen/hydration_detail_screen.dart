@@ -6,6 +6,7 @@ import 'package:infinity_wellness/app/core/base/base_view.dart';
 import 'package:infinity_wellness/app/features/hydration/controller/hydration_detail_controller.dart';
 import 'package:infinity_wellness/app/features/hydration/model/hydration_models.dart';
 import 'package:infinity_wellness/app/features/partner/model/partner_detail_models.dart';
+import 'package:infinity_wellness/app/features/wallet/utility/wallet_ui_metrics.dart';
 
 class HydrationDetailScreen extends BaseView<HydrationDetailController> {
   const HydrationDetailScreen({super.key});
@@ -13,42 +14,36 @@ class HydrationDetailScreen extends BaseView<HydrationDetailController> {
   @override
   Widget buildView(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: WalletColors.background,
       appBar: _buildAppBar(context),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: AppColors.ambientGradientColors,
-          ),
-        ),
+        color: WalletColors.background,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(18, 10, 18, 40),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 40),
           children: [
             // 1. Hero Gauge Card with Dynamic Theme
             _buildHeroGaugeCard(context),
-            const SizedBox(height: 18),
+            const SizedBox(height: WalletSpacing.md),
 
             // 2. Personal Progress Bar Color Theme Selector (Warm, Love, Green, Energetic, Hot)
             _buildColorThemeSelector(context),
-            const SizedBox(height: 18),
+            const SizedBox(height: WalletSpacing.md),
 
             // 3. Beverage Category & Quick Intake Logger
             _buildQuickIntakeSection(context),
-            const SizedBox(height: 18),
+            const SizedBox(height: WalletSpacing.md),
 
             // 4. 7-Day Performance Analytics & History Chart
             _buildWeeklyAnalyticsSection(context),
-            const SizedBox(height: 18),
+            const SizedBox(height: WalletSpacing.md),
 
             // 5. Smart Daily Goal Calculator (Weight, Height & Activity Level)
             _buildSmartGoalCalculatorSection(context),
-            const SizedBox(height: 18),
+            const SizedBox(height: WalletSpacing.md),
 
             // 6. Today's Chronological Intake Timeline
             _buildTodayIntakeTimelineSection(context),
-            const SizedBox(height: 18),
+            const SizedBox(height: WalletSpacing.md),
 
             // 7. Automated Reminder Schedule & Notification Settings
             _buildReminderSettingsSection(context),
@@ -582,31 +577,37 @@ class HydrationDetailScreen extends BaseView<HydrationDetailController> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: AppColors.cyanBadgeBg,
-                      borderRadius: BorderRadius.circular(8),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.cyanBadgeBg,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.bar_chart_rounded,
+                        color: AppColors.primary,
+                        size: 17,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.bar_chart_rounded,
-                      color: AppColors.primary,
-                      size: 17,
+                    const SizedBox(width: 8),
+                    const Flexible(
+                      child: Text(
+                        '7-Day History',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textDark,
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    '7-Day Hydration History',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textDark,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 6),
               Obx(
                 () => Container(
                   padding:

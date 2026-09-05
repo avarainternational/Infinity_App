@@ -1,17 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:infinity_wellness/app/core/base/base_controller.dart';
+import 'package:infinity_wellness/app/data/repositories/hydration_repository.dart';
+import 'package:infinity_wellness/app/data/repositories/user_repository.dart';
+import 'package:infinity_wellness/app/data/services/auth_service.dart';
 import 'package:infinity_wellness/app/features/home/controller/home_controller.dart';
 import 'package:infinity_wellness/app/features/hydration/model/hydration_models.dart';
 import 'package:infinity_wellness/app/features/partner/model/partner_detail_models.dart';
 
 class HydrationDetailController extends BaseController {
+  // Repositories & Services
+  HydrationRepository get _hydrationRepository =>
+      Get.isRegistered<HydrationRepository>() ? Get.find<HydrationRepository>() : HydrationRepositoryImpl();
+
+  UserRepository get _userRepository =>
+      Get.isRegistered<UserRepository>() ? Get.find<UserRepository>() : UserRepositoryImpl();
+
+  AuthService? get _authService =>
+      Get.isRegistered<AuthService>() ? AuthService.to : null;
+
   // Sync with HomeController if available
   HomeController? get _homeController =>
       Get.isRegistered<HomeController>() ? Get.find<HomeController>() : null;
 
-  // Hydration Daily Metrics
-  final currentWaterMl = 2100.obs;
+  // Hydration Daily Metrics (Real data from Supabase)
+  final currentWaterMl = 0.obs;
   final dailyGoalMl = 2600.obs;
   final selectedThemeKey = 'energetic'.obs;
 
@@ -19,9 +32,9 @@ class HydrationDetailController extends BaseController {
   final selectedBeverage = BeverageTypes.pureWater.obs;
 
   // Streaks & Stats
-  final personalStreakDays = 7.obs;
-  final weeklyAdherencePercent = 96.obs;
-  final averageDailyMl = 2540.obs;
+  final personalStreakDays = 0.obs;
+  final weeklyAdherencePercent = 0.obs;
+  final averageDailyMl = 0.obs;
 
   // Smart Goal Calculator inputs
   final userWeightKg = 68.0.obs;
@@ -35,95 +48,11 @@ class HydrationDetailController extends BaseController {
   final reminderStartHour = '08:00 AM'.obs;
   final reminderEndHour = '10:00 PM'.obs;
 
-  // 7-Day History Records
-  final weeklyHistory = <DayIntakeRecord>[
-    const DayIntakeRecord(
-      dayLabel: 'Mon',
-      dateStr: 'Aug 17',
-      intakeMl: 2600,
-      goalMl: 2600,
-      isReached: true,
-    ),
-    const DayIntakeRecord(
-      dayLabel: 'Tue',
-      dateStr: 'Aug 18',
-      intakeMl: 2750,
-      goalMl: 2600,
-      isReached: true,
-    ),
-    const DayIntakeRecord(
-      dayLabel: 'Wed',
-      dateStr: 'Aug 19',
-      intakeMl: 2600,
-      goalMl: 2600,
-      isReached: true,
-    ),
-    const DayIntakeRecord(
-      dayLabel: 'Thu',
-      dateStr: 'Aug 20',
-      intakeMl: 2800,
-      goalMl: 2600,
-      isReached: true,
-    ),
-    const DayIntakeRecord(
-      dayLabel: 'Fri',
-      dateStr: 'Aug 21',
-      intakeMl: 2650,
-      goalMl: 2600,
-      isReached: true,
-    ),
-    const DayIntakeRecord(
-      dayLabel: 'Sat',
-      dateStr: 'Aug 22',
-      intakeMl: 2100,
-      goalMl: 2600,
-      isReached: false,
-    ),
-  ].obs;
+  // 7-Day History Records (Populated dynamically)
+  final weeklyHistory = <DayIntakeRecord>[].obs;
 
-  // Today's Intake Timeline
-  final intakeLogs = <PersonalIntakeLog>[
-    const PersonalIntakeLog(
-      id: 'log-1',
-      timeStr: '4:45 PM',
-      amountMl: 350,
-      beverageType: 'Electrolytes',
-      icon: Icons.bolt_rounded,
-      iconColor: Color(0xFF10B981),
-    ),
-    const PersonalIntakeLog(
-      id: 'log-2',
-      timeStr: '2:15 PM',
-      amountMl: 500,
-      beverageType: 'Pure Water',
-      icon: Icons.water_drop_rounded,
-      iconColor: Color(0xFF00A3FF),
-    ),
-    const PersonalIntakeLog(
-      id: 'log-3',
-      timeStr: '11:30 AM',
-      amountMl: 450,
-      beverageType: 'Mineral Water',
-      icon: Icons.local_drink_rounded,
-      iconColor: Color(0xFF06B6D4),
-    ),
-    const PersonalIntakeLog(
-      id: 'log-4',
-      timeStr: '8:30 AM',
-      amountMl: 500,
-      beverageType: 'Herbal Tea',
-      icon: Icons.emoji_food_beverage_rounded,
-      iconColor: Color(0xFF8B5CF6),
-    ),
-    const PersonalIntakeLog(
-      id: 'log-5',
-      timeStr: '7:15 AM',
-      amountMl: 300,
-      beverageType: 'Pure Water',
-      icon: Icons.water_drop_rounded,
-      iconColor: Color(0xFF00A3FF),
-    ),
-  ].obs;
+  // Today's Intake Timeline (Populated dynamically from Supabase)
+  final intakeLogs = <PersonalIntakeLog>[].obs;
 
   double get progress => (dailyGoalMl.value > 0)
       ? (currentWaterMl.value / dailyGoalMl.value).clamp(0.0, 1.0)
@@ -158,6 +87,73 @@ class HydrationDetailController extends BaseController {
       selectedThemeKey.value = home.userThemeKey.value;
       personalStreakDays.value = home.personalStreakDays.value;
     }
+
+    _loadHydrationData();
+  }
+
+  Future<void> _loadHydrationData() async {
+    final userId = _authService?.currentUser.value?.id ?? '';
+    if (userId.isNotEmpty) {
+      try {
+        final profile = await _userRepository.getUserProfile(userId);
+        if (profile != null) {
+          userWeightKg.value = profile.weightKg;
+          userHeightCm.value = profile.heightCm;
+          dailyGoalMl.value = profile.dailyWaterGoalMl;
+        }
+
+        final logs = await _hydrationRepository.getTodayLogs(userId);
+        if (logs.isNotEmpty) {
+          intakeLogs.assignAll(logs.map((l) {
+            final now = l.loggedAt.toLocal();
+            final timeFormatted =
+                '${now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour)}:${now.minute.toString().padLeft(2, '0')} ${now.hour >= 12 ? 'PM' : 'AM'}';
+            return PersonalIntakeLog(
+              id: l.id,
+              timeStr: timeFormatted,
+              amountMl: l.amountMl,
+              beverageType: l.beverageType,
+              icon: Icons.water_drop_rounded,
+              iconColor: const Color(0xFF00A3FF),
+            );
+          }).toList());
+        } else {
+          intakeLogs.clear();
+        }
+
+        final total = await _hydrationRepository.getTodayTotalMl(userId);
+        currentWaterMl.value = total;
+        _homeController?.currentWaterMl.value = total;
+
+        // Load weekly history from repository strictly for the individual user
+        final historyData = await _hydrationRepository.getWeeklyHistory(userId);
+        final now = DateTime.now();
+        final weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        
+        final historyList = <DayIntakeRecord>[];
+        for (int i = 6; i >= 0; i--) {
+          final dayDate = now.subtract(Duration(days: i));
+          final key = DateTime(dayDate.year, dayDate.month, dayDate.day);
+          final dayName = i == 0 ? 'Today' : (i == 1 ? 'Yesterday' : weekdays[dayDate.weekday - 1]);
+          final dateStr = '${months[dayDate.month - 1]} ${dayDate.day}';
+          final intake = historyData[key] ?? (i == 0 ? total : 0);
+          historyList.add(DayIntakeRecord(
+            dayLabel: dayName,
+            dateStr: dateStr,
+            intakeMl: intake,
+            goalMl: dailyGoalMl.value,
+            isReached: intake >= dailyGoalMl.value && intake > 0,
+          ));
+        }
+        weeklyHistory.assignAll(historyList);
+        if (dailyGoalMl.value > 0) {
+          weeklyAdherencePercent.value = ((total / dailyGoalMl.value) * 100).clamp(0, 100).toInt();
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error loading hydration data: $e');
+      }
+    }
   }
 
   void setTheme(String themeKey) {
@@ -180,8 +176,17 @@ class HydrationDetailController extends BaseController {
   void logIntake(int amountMl) {
     final effectiveAmount =
         (amountMl * selectedBeverage.value.hydrationFactor).round();
+    final prevWater = currentWaterMl.value;
     currentWaterMl.value += effectiveAmount;
     _homeController?.currentWaterMl.value = currentWaterMl.value;
+
+    final earnedPts = (amountMl >= 500) ? 20 : 10;
+    final reachedGoal = (currentWaterMl.value >= dailyGoalMl.value) && (prevWater < dailyGoalMl.value);
+    final totalAwarded = reachedGoal ? (earnedPts + 100) : earnedPts;
+
+    if (_homeController != null) {
+      _homeController!.wellnessPoints.value += totalAwarded;
+    }
 
     final now = DateTime.now();
     final timeFormatted =
@@ -198,22 +203,57 @@ class HydrationDetailController extends BaseController {
 
     intakeLogs.insert(0, newLog);
 
-    Get.snackbar(
-      'Intake Logged! 💧',
-      '+$amountMl ml (${selectedBeverage.value.name}) recorded. Today: ${currentWaterMl.value} / ${dailyGoalMl.value} ml',
-      snackPosition: SnackPosition.TOP,
-      duration: const Duration(seconds: 2),
-      backgroundColor: currentTheme.accentColor.withValues(alpha: 0.92),
-      colorText: Colors.white,
-      margin: const EdgeInsets.all(12),
-      borderRadius: 14,
+    // Persist to Supabase
+    final userId = _authService?.currentUser.value?.id ?? '';
+    _hydrationRepository.logWaterIntake(
+      userId: userId,
+      amountMl: effectiveAmount,
+      beverageType: selectedBeverage.value.name,
     );
+
+    if (userId.isNotEmpty) {
+      _userRepository.addWellnessPoints(userId, totalAwarded);
+      if (_authService?.userProfile.value != null) {
+        _authService!.userProfile.value = _authService!.userProfile.value!.copyWith(
+          wellnessPointsBalance: _authService!.userProfile.value!.wellnessPointsBalance + totalAwarded,
+        );
+      }
+    }
+
+    if (reachedGoal) {
+      Get.snackbar(
+        'Daily Goal Reached! 🏆',
+        '+$amountMl ml logged (+$earnedPts pts) + 100 Bonus Points! Today: ${currentWaterMl.value} / ${dailyGoalMl.value} ml',
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 4),
+        backgroundColor: const Color(0xFF0284C7),
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(12),
+        borderRadius: 14,
+        icon: const Icon(Icons.emoji_events_rounded, color: Color(0xFFFBBF24), size: 28),
+      );
+    } else {
+      Get.snackbar(
+        'Intake Logged! 💧',
+        '+$amountMl ml recorded (+$earnedPts pts). Today: ${currentWaterMl.value} / ${dailyGoalMl.value} ml',
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 2),
+        backgroundColor: currentTheme.accentColor.withValues(alpha: 0.92),
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(12),
+        borderRadius: 14,
+        icon: const Icon(Icons.water_drop_rounded, color: Colors.white, size: 24),
+      );
+    }
   }
 
   void deleteLog(PersonalIntakeLog log) {
     intakeLogs.remove(log);
     currentWaterMl.value = (currentWaterMl.value - log.amountMl).clamp(0, 100000);
     _homeController?.currentWaterMl.value = currentWaterMl.value;
+
+    final userId = _authService?.currentUser.value?.id ?? '';
+    _hydrationRepository.deleteLog(logId: log.id, userId: userId);
 
     Get.snackbar(
       'Log Removed',
@@ -227,6 +267,17 @@ class HydrationDetailController extends BaseController {
     final newGoal = calculatedRecommendedGoal;
     dailyGoalMl.value = newGoal;
     _homeController?.dailyGoalMl.value = newGoal;
+
+    final userId = _authService?.currentUser.value?.id ?? '';
+    if (userId.isNotEmpty) {
+      _userRepository.updateHealthMetrics(
+        userId: userId,
+        weightKg: userWeightKg.value,
+        heightCm: userHeightCm.value,
+        activityLevel: activityLevel.value,
+        dailyWaterGoalMl: newGoal,
+      );
+    }
 
     Get.snackbar(
       'Daily Goal Updated 🎯',

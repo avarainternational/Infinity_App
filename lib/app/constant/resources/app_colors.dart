@@ -81,13 +81,13 @@ class AppColors {
   // ---------------------------------------------------------------------------
   // Borders, Dividers & Neutral Surfaces
   // ---------------------------------------------------------------------------
-  static const Color border = Color(0xFFCCCCCC);
+  static const Color border = Color(0xFFE2E8F0);
   static const Color borderLight = Color(0xFFE2E8F0);
   static const Color borderSubtle = Color(0xFFE5E7EB);
-  static const Color divider = Color(0xFFE8EEF3);
-  static const Color disabled = Color(0xFFB8B2C2);
+  static const Color divider = Color(0xFFF1F5F9);
+  static const Color disabled = Color(0xFF94A3B8);
   static const Color neutralSurface = Color(0xFFF8FAFC);
-  static const Color navPillSelected = Color(0xFFEBEBEB);
+  static const Color navPillSelected = Color(0xFFF1F5F9);
   static const Color barrier = Color(0x33000000);
 
   // ---------------------------------------------------------------------------

@@ -1,8 +1,10 @@
 class Routes {
   Routes._();
 
-  // Auth
+  // Splash & Onboarding
+  static const splash = '/splash';
   static const login = '/login';
+  static const onboarding = '/onboarding';
 
   // Super App Native Shell
   static const shell = '/shell';
