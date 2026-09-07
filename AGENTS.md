@@ -18,6 +18,7 @@ Read these files before architectural or implementation work:
 6. `context/progress-tracker.md`
 7. `context/decision-log.md`
 8. `context/ai-workflow-rules.md`
+9. `context/reward-shop-capacitor-guide.md` when changing Reward Shop, Capacitor, Flutter mini-app hosting, or Vercel deployment.
 
 `current-state.md` is the runtime source of truth. `decision-log.md` records why important choices were made.
 

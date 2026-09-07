@@ -15,6 +15,7 @@ class Routes {
   static const partnerDetail = '/partner-detail';
   static const hydrationDetail = '/hydration-detail';
   static const rewardsShop = '/rewards-shop';
+  static const rewardShopMiniApp = '/mini-apps/reward-shop';
   static const achievements = '/achievements';
 
   // Legacy alias for compatibility

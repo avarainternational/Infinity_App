@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:infinity_wellness/app/constant/routing/app_route.dart';
 import 'package:infinity_wellness/app/core/base/base_controller.dart';
 import 'package:infinity_wellness/app/data/services/auth_service.dart';
 import 'package:infinity_wellness/app/data/services/supabase_service.dart';
@@ -32,12 +33,25 @@ class AuthController extends BaseController {
 
       await _authService.signInWithGoogle();
     } catch (e) {
-      errorMessage.value = e.toString().replaceAll('Exception: ', '').replaceAll('AuthException: ', '');
+      errorMessage.value = e
+          .toString()
+          .replaceAll('Exception: ', '')
+          .replaceAll('AuthException: ', '');
       _showSnackbar('Sign-In Notice', errorMessage.value);
     } finally {
       isLoading.value = false;
       isConnecting.value = false;
     }
+  }
+
+  /// Opens the local prototype without requiring the project owner's Supabase
+  /// account. Network-backed features continue to use their existing fallbacks.
+  void continueInDemoMode() {
+    errorMessage.value = '';
+    _authService.userName.value = 'Demo User';
+    _authService.userEmail.value = 'demo@infinitywellness.local';
+    _authService.isAuthenticated.value = true;
+    Get.offAllNamed<void>(Routes.shell);
   }
 
   void _showSnackbar(String title, String message) {

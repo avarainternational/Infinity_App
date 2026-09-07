@@ -20,7 +20,10 @@ class LoginScreen extends BaseView<AuthController> {
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 24,
+                  ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -147,7 +150,9 @@ class LoginScreen extends BaseView<AuthController> {
           () => SizedBox(
             height: 54,
             child: ElevatedButton(
-              onPressed: controller.isLoading.value ? null : () => controller.signInWithGoogle(),
+              onPressed: controller.isLoading.value
+                  ? null
+                  : () => controller.signInWithGoogle(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: AppColors.textDark,
@@ -165,7 +170,9 @@ class LoginScreen extends BaseView<AuthController> {
                       height: 24,
                       child: CircularProgressIndicator(
                         strokeWidth: 2.5,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.primary,
+                        ),
                       ),
                     )
                   : Row(
@@ -188,7 +195,34 @@ class LoginScreen extends BaseView<AuthController> {
             ),
           ),
         ),
-        const SizedBox(height: 26),
+        const SizedBox(height: 12),
+
+        SizedBox(
+          height: 50,
+          child: OutlinedButton.icon(
+            onPressed: controller.continueInDemoMode,
+            icon: const Icon(Icons.offline_bolt_rounded, size: 20),
+            label: const Text('Continue in Demo Mode'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              side: const BorderSide(color: AppColors.primary, width: 1.4),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Explore the prototype without a Supabase account.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF64748B),
+          ),
+        ),
+        const SizedBox(height: 22),
 
         // Footer Brand Signature
         const Column(
@@ -222,9 +256,7 @@ class LoginScreen extends BaseView<AuthController> {
     return SizedBox(
       width: 22,
       height: 22,
-      child: CustomPaint(
-        painter: _GoogleIconPainter(),
-      ),
+      child: CustomPaint(painter: _GoogleIconPainter()),
     );
   }
 }
@@ -298,7 +330,12 @@ class _GoogleIconPainter extends CustomPainter {
     // Right crossbar
     final barPaint = Paint()..color = AppColors.googleBlue;
     final barRect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(center.dx - 1, center.dy - radius * 0.22, radius * 1.05, radius * 0.44),
+      Rect.fromLTWH(
+        center.dx - 1,
+        center.dy - radius * 0.22,
+        radius * 1.05,
+        radius * 0.44,
+      ),
       const Radius.circular(2),
     );
     canvas.drawRRect(barRect, barPaint);

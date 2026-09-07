@@ -1,5 +1,15 @@
 # Current State
 
+## 2026-09-06: Vue/Capacitor Reward Shop integration
+
+- The Flutter base is synchronized with Avara International commit `e55e029cb348957c1a2b02fb7e59828656d3a7f4`.
+- The Mini-App Store's Shop module launches the bundled Vue Reward Shop through `webview_flutter` at `/mini-apps/reward-shop`.
+- The existing native Rewards Shop remains available to Home and Wallet routes.
+- Demo deductions persist through a restricted SharedPreferences JSON bridge and do not change the real wallet balance.
+- The bundled Vue app works offline because `assets/mini_apps/reward_shop/index.html` is packaged in the Flutter APK.
+- Login offers a local Demo Mode for prototype review without Supabase. The committed example configuration is no longer loaded as live credentials; Google OAuth requires an ignored `assets/config/supabase_config.local.json` supplied by the project owner.
+- Full implementation and deployment guide: `context/reward-shop-capacitor-guide.md`.
+
 Last synchronized: 2026-08-19
 
 ## Project Pivot & Truth

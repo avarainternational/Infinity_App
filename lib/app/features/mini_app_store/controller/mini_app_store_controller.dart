@@ -161,7 +161,7 @@ class MiniAppStoreController extends BaseController {
     } else if (app.id == 'friend-synergy') {
       Get.toNamed(Routes.partnerDetail);
     } else if (app.id == 'rewards-shop') {
-      Get.toNamed(Routes.rewardsShop);
+      Get.toNamed(Routes.rewardShopMiniApp);
     } else if (app.id == 'achievements') {
       Get.toNamed(Routes.achievements);
     } else if (app.id == 'medical-news') {

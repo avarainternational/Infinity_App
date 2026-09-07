@@ -1,5 +1,7 @@
 # Infinity Wellness (by Infinity Water)
 
+Reward Shop configuration, Capacitor packaging, Flutter hosting, offline behavior and Vercel operations are documented in [`context/reward-shop-capacitor-guide.md`](context/reward-shop-capacitor-guide.md).
+
 Infinity Wellness is a Flutter mobile digital health and wellness companion designed for youths and young adults. It prioritizes health literacy, mutual accountability, and well-being through a modular Super App pattern featuring a central shell and isolated Mini-Apps.
 
 ## Super App Architecture

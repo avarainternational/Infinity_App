@@ -11,13 +11,12 @@ class SupabaseConfig {
 
   static const String localAssetPath =
       'assets/config/supabase_config.local.json';
-  static const String exampleAssetPath =
-      'assets/config/supabase_config.example.json';
-
   // Fallback / default placeholder credentials
   static const String defaultUrl = 'https://YOUR_PROJECT_REF.supabase.co';
-  static const String defaultAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example';
-  static const String defaultRedirectUrl = 'io.supabase.infinitywellness://login-callback/';
+  static const String defaultAnonKey =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example';
+  static const String defaultRedirectUrl =
+      'io.supabase.infinitywellness://login-callback/';
 
   final String supabaseUrl;
   final String supabaseAnonKey;
@@ -41,18 +40,8 @@ class SupabaseConfig {
       }
     }
 
-    // 2. Try to load example config file
-    final exampleJson = await _tryLoadAsset(exampleAssetPath);
-    if (exampleJson != null) {
-      try {
-        final decoded = jsonDecode(exampleJson) as Map<String, dynamic>;
-        return SupabaseConfig.fromJson(decoded);
-      } catch (e) {
-        debugPrint('Failed to parse $exampleAssetPath: $e');
-      }
-    }
-
-    // 3. Fallback to default constants
+    // The committed example is documentation only. Loading it at runtime can
+    // send users to a project they do not own or that is no longer available.
     return const SupabaseConfig(
       supabaseUrl: defaultUrl,
       supabaseAnonKey: defaultAnonKey,
@@ -71,8 +60,12 @@ class SupabaseConfig {
   factory SupabaseConfig.fromJson(Map<String, dynamic> json) {
     return SupabaseConfig(
       supabaseUrl: (json['supabaseUrl'] ?? defaultUrl).toString().trim(),
-      supabaseAnonKey: (json['supabaseAnonKey'] ?? defaultAnonKey).toString().trim(),
-      redirectUrl: (json['redirectUrl'] ?? defaultRedirectUrl).toString().trim(),
+      supabaseAnonKey: (json['supabaseAnonKey'] ?? defaultAnonKey)
+          .toString()
+          .trim(),
+      redirectUrl: (json['redirectUrl'] ?? defaultRedirectUrl)
+          .toString()
+          .trim(),
     );
   }
 }

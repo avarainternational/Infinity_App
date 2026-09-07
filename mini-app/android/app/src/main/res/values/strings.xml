@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Infinity Reward Shop</string>
+    <string name="title_activity_main">Infinity Reward Shop</string>
+    <string name="package_name">com.infinitywellness.rewardshop</string>
+    <string name="custom_url_scheme">com.infinitywellness.rewardshop</string>
+</resources>

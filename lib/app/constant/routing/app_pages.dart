@@ -8,6 +8,8 @@ import 'package:infinity_wellness/app/features/home/binding/home_binding.dart';
 import 'package:infinity_wellness/app/features/home/screen/home_screen.dart';
 import 'package:infinity_wellness/app/features/mini_app_store/binding/mini_app_store_binding.dart';
 import 'package:infinity_wellness/app/features/mini_app_store/screen/mini_app_store_screen.dart';
+import 'package:infinity_wellness/app/features/mini_apps/reward_shop/binding/reward_shop_binding.dart';
+import 'package:infinity_wellness/app/features/mini_apps/reward_shop/screen/reward_shop_screen.dart';
 import 'package:infinity_wellness/app/features/hydration/binding/hydration_detail_binding.dart';
 import 'package:infinity_wellness/app/features/hydration/screen/hydration_detail_screen.dart';
 import 'package:infinity_wellness/app/features/partner/binding/partner_detail_binding.dart';
@@ -94,6 +96,11 @@ class AppPages {
       name: Routes.rewardsShop,
       page: () => const RewardsShopScreen(),
       binding: RewardsShopBinding(),
+    ),
+    GetPage(
+      name: Routes.rewardShopMiniApp,
+      page: () => const RewardShopScreen(),
+      binding: RewardShopBinding(),
     ),
     GetPage(
       name: Routes.achievements,
