@@ -1,8 +1,11 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:infinity_wellness/app/constant/routing/app_route.dart';
 import 'package:infinity_wellness/app/features/auth/binding/auth_binding.dart';
 import 'package:infinity_wellness/app/features/auth/screen/login_screen.dart';
 import 'package:infinity_wellness/app/features/feed/binding/feed_binding.dart';
+import 'package:infinity_wellness/app/features/feed/binding/feed_detail_binding.dart';
+import 'package:infinity_wellness/app/features/feed/screen/feed_detail_screen.dart';
 import 'package:infinity_wellness/app/features/feed/screen/feed_screen.dart';
 import 'package:infinity_wellness/app/features/home/binding/home_binding.dart';
 import 'package:infinity_wellness/app/features/home/screen/home_screen.dart';
@@ -51,6 +54,14 @@ class AppPages {
       binding: AuthBinding(),
     ),
     GetPage(
+      name: Routes.loginCallback,
+      page: () => const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      ),
+    ),
+    GetPage(
       name: Routes.onboarding,
       page: () => const OnboardingSetupScreen(),
       binding: OnboardingSetupBinding(),
@@ -69,6 +80,11 @@ class AppPages {
       name: Routes.feed,
       page: () => const FeedScreen(),
       binding: FeedBinding(),
+    ),
+    GetPage(
+      name: Routes.feedDetail,
+      page: () => const FeedDetailScreen(),
+      binding: FeedDetailBinding(),
     ),
     GetPage(
       name: Routes.miniAppStore,

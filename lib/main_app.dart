@@ -30,6 +30,14 @@ class MyApp extends StatelessWidget {
           initialRoute: Routes.splash,
           initialBinding: InitialBinding(),
           getPages: AppPages.routes,
+          unknownRoute: GetPage(
+            name: '/not-found',
+            page: () => const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+          ),
         );
       },
       theme: ShadThemeData(

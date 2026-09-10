@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:infinity_wellness/app/constant/routing/app_route.dart';
 import 'package:infinity_wellness/app/data/models/user_profile_model.dart';
 import 'package:infinity_wellness/app/data/repositories/user_repository.dart';
@@ -10,6 +11,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthService extends GetxService {
   static AuthService get to => Get.find<AuthService>();
+
+  /// Web Client ID registered in Google Cloud Console and Supabase Auth Provider
+  static const String _googleWebClientId =
+      '887314432195-hq02r1lvvpf6n4sn1p0jqiclrm8e3l97.apps.googleusercontent.com';
+
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    serverClientId: _googleWebClientId,
+    scopes: ['email', 'profile'],
+  );
 
   final SupabaseService _supabaseService = SupabaseService.to;
   StreamSubscription<AuthState>? _authSubscription;
@@ -71,6 +81,18 @@ class AuthService extends GetxService {
       },
       onError: (error) {
         debugPrint('❌ Supabase Auth Subscription Error: $error');
+        if (error is AuthException && Get.context != null) {
+          Get.snackbar(
+            'Sign-In Notice',
+            error.message,
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.redAccent.withValues(alpha: 0.9),
+            colorText: Colors.white,
+            margin: const EdgeInsets.all(16),
+            borderRadius: 14,
+            duration: const Duration(seconds: 4),
+          );
+        }
       },
     );
   }
@@ -94,6 +116,13 @@ class AuthService extends GetxService {
     try {
       var profile = await _userRepository.getUserProfile(user.id);
       if (profile == null) {
+        final initialGoal = UserProfileModel.computeRecommendedGoal(
+          weightKg: 68.0,
+          activityLevel: 'Moderate Active (+300 ml)',
+          heightCm: 175.0,
+          age: 22,
+          gender: 'Prefer not to say',
+        );
         final newProfile = UserProfileModel(
           id: user.id,
           email: user.email ?? '',
@@ -102,12 +131,16 @@ class AuthService extends GetxService {
           weightKg: 68.0,
           heightCm: 175.0,
           activityLevel: 'Moderate Active (+300 ml)',
-          dailyWaterGoalMl: 2700,
+          dailyWaterGoalMl: initialGoal,
           inviteCode: UserProfileModel.generateInviteCode(userName.value),
           wellnessPointsBalance: 500,
           isOnboarded: false,
         );
         profile = await _userRepository.upsertProfile(newProfile);
+      } else if (profile.inviteCode.trim().isEmpty) {
+        profile = await _userRepository.upsertProfile(
+          profile.copyWith(inviteCode: UserProfileModel.generateInviteCode(profile.displayName)),
+        );
       }
       userProfile.value = profile;
       if (profile.displayName.isNotEmpty) {
@@ -117,6 +150,12 @@ class AuthService extends GetxService {
         avatarUrl.value = profile.avatarUrl;
       }
 
+      // Cache daily goal to local storage for immediate offline hydration rendering
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('pref_user_daily_water_goal_ml', profile.dailyWaterGoalMl);
+      } catch (_) {}
+
       // Check and award daily login / check-in points (+50 pts)
       await _checkAndAwardDailyLoginReward(user.id);
 
@@ -125,7 +164,9 @@ class AuthService extends GetxService {
           Get.offAllNamed(Routes.onboarding);
         }
       } else {
-        if (Get.currentRoute == Routes.login || Get.currentRoute == Routes.onboarding) {
+        if (Get.currentRoute == Routes.login ||
+            Get.currentRoute == Routes.onboarding ||
+            Get.currentRoute == Routes.loginCallback) {
           Get.offAllNamed(Routes.shell);
         }
       }
@@ -260,7 +301,8 @@ class AuthService extends GetxService {
     }
   }
 
-  /// Initiates Google OAuth Sign-In via Supabase
+  /// Initiates Native Google Sign-In via Google Play Services / native sheet
+  /// and authenticates with Supabase using the Google ID token.
   Future<bool> signInWithGoogle() async {
     if (!_supabaseService.isInitialized) {
       throw const AuthException(
@@ -269,14 +311,38 @@ class AuthService extends GetxService {
     }
 
     try {
-      final redirectUrl = _supabaseService.config.redirectUrl;
-      final response = await _supabaseService.client.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: redirectUrl.isNotEmpty ? redirectUrl : null,
-        authScreenLaunchMode: LaunchMode.inAppBrowserView,
+      // 1. Trigger Native In-App Google Sign-In
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        // User dismissed the account picker
+        return false;
+      }
+
+      // 2. Obtain ID Token and Access Token from Google
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final String? idToken = googleAuth.idToken;
+      final String? accessToken = googleAuth.accessToken;
+
+      if (idToken == null || idToken.isEmpty) {
+        throw const AuthException(
+          'No ID Token returned from Google Sign-In. Verify your SHA-1 fingerprint and Web Client ID in Google Cloud Console.',
+        );
+      }
+
+      // 3. Authenticate with Supabase via signInWithIdToken
+      // This sends a direct REST request through your Cloudflare proxy without any browser redirects!
+      final AuthResponse response = await _supabaseService.client.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: accessToken,
       );
 
-      return response;
+      if (response.user != null) {
+        await _updateUserState(response.user!);
+        return true;
+      }
+
+      return false;
     } catch (e) {
       debugPrint('❌ Google Sign-In Error: $e');
       rethrow;
@@ -293,6 +359,14 @@ class AuthService extends GetxService {
       }
     } catch (e) {
       debugPrint('⚠️ Sign out warning: $e');
+    }
+
+    try {
+      if (_googleSignIn.currentUser != null) {
+        await _googleSignIn.signOut();
+      }
+    } catch (e) {
+      debugPrint('⚠️ Google sign out warning: $e');
     }
 
     if (Get.currentRoute != Routes.login) {

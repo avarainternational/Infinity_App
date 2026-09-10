@@ -13,6 +13,11 @@ abstract class FeedRepository {
     String? category,
     String? authorName,
   });
+  Future<bool> toggleLikePost({
+    required String postId,
+    required bool isLiking,
+    int? currentLikes,
+  });
 }
 
 class FeedRepositoryImpl implements FeedRepository {
@@ -22,6 +27,7 @@ class FeedRepositoryImpl implements FeedRepository {
   final SupabaseService? _supabaseService;
 
   final Set<String> _localSavedPostIds = {};
+  final Set<String> _localLikedPostIds = {};
 
   bool get _isLive => _supabaseService?.isInitialized == true && _supabaseService?.config.isConfigured == true;
 
@@ -39,14 +45,13 @@ class FeedRepositoryImpl implements FeedRepository {
             .map((row) => FeedItem.fromJson(row as Map<String, dynamic>))
             .toList();
 
-        if (list.isNotEmpty) {
-          return list;
-        }
+        return list;
       } catch (e) {
         debugPrint('⚠️ Error fetching feed posts from Supabase: $e');
+        return [];
       }
     }
-    return [];
+    return FeedController.sampleFeedItems;
   }
 
   @override
@@ -114,5 +119,32 @@ class FeedRepositoryImpl implements FeedRepository {
     }
 
     return !isCurrentlySaved;
+  }
+
+  @override
+  Future<bool> toggleLikePost({
+    required String postId,
+    required bool isLiking,
+    int? currentLikes,
+  }) async {
+    if (isLiking) {
+      _localLikedPostIds.add(postId);
+    } else {
+      _localLikedPostIds.remove(postId);
+    }
+
+    if (_isLive && postId.isNotEmpty && currentLikes != null) {
+      try {
+        final newCount = isLiking ? currentLikes + 1 : (currentLikes > 0 ? currentLikes - 1 : 0);
+        await _supabaseService!.client
+            .from('feed_posts')
+            .update({'likes_count': newCount})
+            .eq('id', postId);
+      } catch (e) {
+        debugPrint('⚠️ Error updating likes count in Supabase: $e');
+      }
+    }
+
+    return isLiking;
   }
 }

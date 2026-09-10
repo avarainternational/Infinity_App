@@ -4,12 +4,14 @@ class Routes {
   // Splash & Onboarding
   static const splash = '/splash';
   static const login = '/login';
+  static const loginCallback = '/login-callback';
   static const onboarding = '/onboarding';
 
   // Super App Native Shell
   static const shell = '/shell';
   static const home = '/home';
   static const feed = '/feed';
+  static const feedDetail = '/feed-detail';
   static const miniAppStore = '/mini-app-store';
   static const profile = '/profile';
   static const partnerDetail = '/partner-detail';

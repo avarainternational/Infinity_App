@@ -26,7 +26,7 @@ void main() {
 
   group('FeedController News & Expand Logic', () {
     test('initializes with verified medical news items and banner graphics', () {
-      final controller = Get.put(FeedController());
+      final controller = Get.put(FeedController(initialFeedItems: FeedController.sampleFeedItems));
       expect(controller.feedItems.length, greaterThanOrEqualTo(4));
 
       final firstItem = controller.feedItems.first;
@@ -37,7 +37,7 @@ void main() {
     });
 
     test('toggles expand and collapse states', () {
-      final controller = Get.put(FeedController());
+      final controller = Get.put(FeedController(initialFeedItems: FeedController.sampleFeedItems));
       const testId = 'feed-1';
 
       expect(controller.isExpanded(testId), isFalse);
@@ -49,7 +49,7 @@ void main() {
     });
 
     test('toggles save and bookmark status', () {
-      final controller = Get.put(FeedController());
+      final controller = Get.put(FeedController(initialFeedItems: FeedController.sampleFeedItems));
       const testId = 'feed-1';
 
       final item = controller.feedItems.firstWhere((i) => i.id == testId);
@@ -61,7 +61,7 @@ void main() {
     });
 
     test('loads leaderboard users with premium vector icons and ranks', () {
-      final controller = Get.put(FeedController());
+      final controller = Get.put(FeedController(initialFeedItems: FeedController.sampleFeedItems));
       expect(controller.leaderboardUsers.length, greaterThanOrEqualTo(5));
       expect(controller.leaderboardUsers.first.rank, equals(1));
       expect(controller.leaderboardUsers.first.badgeTitle, equals('Hydration Deity'));
@@ -76,7 +76,7 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
 
-      final controller = Get.put(FeedController());
+      final controller = Get.put(FeedController(initialFeedItems: FeedController.sampleFeedItems));
       controller.activeTab.value = SocialTab.feed;
 
       await tester.pumpWidget(

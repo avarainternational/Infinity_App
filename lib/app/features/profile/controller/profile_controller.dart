@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:infinity_wellness/app/core/base/base_controller.dart';
+import 'package:infinity_wellness/app/data/models/user_profile_model.dart';
 import 'package:infinity_wellness/app/data/repositories/synergy_repository.dart';
 import 'package:infinity_wellness/app/data/repositories/user_repository.dart';
 import 'package:infinity_wellness/app/data/services/auth_service.dart';
+import 'package:infinity_wellness/app/data/services/notification_service.dart';
+import 'package:infinity_wellness/app/features/home/controller/home_controller.dart';
+import 'package:infinity_wellness/app/features/hydration/controller/hydration_detail_controller.dart';
 
 class ProfileAchievement {
   const ProfileAchievement({
@@ -176,6 +181,20 @@ class ProfileController extends BaseController {
   }
 
   Future<void> _loadProfileData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      sipAmountMl.value = prefs.getInt('pref_user_sip_amount_ml') ?? 250;
+      final cachedGoal = prefs.getInt('pref_user_daily_water_goal_ml');
+      if (cachedGoal != null && cachedGoal > 0) {
+        customDailyGoalMl.value = cachedGoal;
+      }
+    } catch (_) {}
+
+    if (Get.isRegistered<NotificationService>()) {
+      hydrationRemindersEnabled.value =
+          NotificationService.to.areRemindersEnabled.value;
+    }
+
     final userId = _authService?.currentUser.value?.id ?? '';
     if (userId.isNotEmpty) {
       final profile = await _userRepository.getUserProfile(userId);
@@ -186,6 +205,9 @@ class ProfileController extends BaseController {
         weightKg.value = profile.weightKg;
         heightCm.value = profile.heightCm;
         activityLevel.value = profile.activityLevel;
+        if (profile.dailyWaterGoalMl > 0) {
+          customDailyGoalMl.value = profile.dailyWaterGoalMl;
+        }
       }
 
       final activePair = await _synergyRepository.getActivePair(userId);
@@ -221,6 +243,10 @@ class ProfileController extends BaseController {
     'Very Active (Athletic)',
   ];
 
+  // Configurable Daily Goal & Sip Amount
+  final customDailyGoalMl = 2600.obs;
+  final sipAmountMl = 250.obs;
+
   // 1-on-1 Synergy Partner (Populated dynamically from Supabase)
   final partnerName = ''.obs;
   final partnerEmail = ''.obs;
@@ -245,6 +271,12 @@ class ProfileController extends BaseController {
     return (baseMl + activityBonus).round();
   }
 
+  int get recommendedDailyGoalMl => UserProfileModel.computeRecommendedGoal(
+        weightKg: weightKg.value,
+        heightCm: heightCm.value,
+        activityLevel: activityLevel.value,
+      );
+
   void updateWeight(double newWeight) {
     weightKg.value = newWeight;
     _persistHealthMetrics();
@@ -258,6 +290,110 @@ class ProfileController extends BaseController {
   void setActivityLevel(String level) {
     activityLevel.value = level;
     _persistHealthMetrics();
+  }
+
+  Future<void> updateDailyGoal(int newGoalMl) async {
+    final clamped = newGoalMl.clamp(1000, 6000);
+    customDailyGoalMl.value = clamped;
+
+    if (Get.isRegistered<HomeController>()) {
+      Get.find<HomeController>().dailyGoalMl.value = clamped;
+    }
+    if (Get.isRegistered<HydrationDetailController>()) {
+      Get.find<HydrationDetailController>().dailyGoalMl.value = clamped;
+    }
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('pref_user_daily_water_goal_ml', clamped);
+    } catch (_) {}
+
+    final userId = _authService?.currentUser.value?.id ?? '';
+    if (userId.isNotEmpty) {
+      await _userRepository.updateDailyGoal(userId, clamped);
+      if (_authService?.userProfile.value != null) {
+        _authService!.userProfile.value =
+            _authService!.userProfile.value!.copyWith(
+          dailyWaterGoalMl: clamped,
+        );
+      }
+    }
+
+    if (Get.context != null) {
+      Get.snackbar(
+        'Daily Goal Saved! 🎯',
+        'Daily water goal set to $clamped ml.',
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 2),
+        backgroundColor: const Color(0xFF00A3FF).withValues(alpha: 0.92),
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(12),
+        borderRadius: 14,
+      );
+    }
+  }
+
+  Future<void> updateSipAmount(int amountMl) async {
+    final clamped = amountMl.clamp(50, 1000);
+    sipAmountMl.value = clamped;
+
+    if (Get.isRegistered<HomeController>()) {
+      Get.find<HomeController>().sipAmountMl.value = clamped;
+    }
+    if (Get.isRegistered<HydrationDetailController>()) {
+      Get.find<HydrationDetailController>().sipAmountMl.value = clamped;
+    }
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('pref_user_sip_amount_ml', clamped);
+    } catch (_) {}
+
+    if (Get.context != null) {
+      Get.snackbar(
+        '1 Sip Amount Updated 🥤',
+        'Quick-log sip size set to $clamped ml.',
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 2),
+        backgroundColor: const Color(0xFF00A3FF).withValues(alpha: 0.92),
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(12),
+        borderRadius: 14,
+      );
+    }
+  }
+
+  void toggleReminders(bool value) {
+    hydrationRemindersEnabled.value = value;
+    if (Get.isRegistered<NotificationService>()) {
+      NotificationService.to.setRemindersEnabled(value);
+    }
+    if (Get.isRegistered<HydrationDetailController>()) {
+      Get.find<HydrationDetailController>().isRemindersEnabled.value = value;
+    }
+  }
+
+  void togglePartnerNudges(bool value) {
+    partnerNudgesEnabled.value = value;
+    if (Get.context != null) {
+      Get.snackbar(
+        value ? 'Partner Nudges Enabled 🔔' : 'Partner Nudges Silenced 🔕',
+        value
+            ? 'You will receive device alerts when your partner nudges you.'
+            : 'Partner nudge notifications disabled.',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 2),
+      );
+    }
+  }
+
+  void sendTestNotification() {
+    if (Get.isRegistered<NotificationService>()) {
+      NotificationService.to.showInstantNotification(
+        title: 'Infinity Wellness Alert 💧',
+        body: 'Your notification system is fully operational and active!',
+      );
+    }
   }
 
   void _persistHealthMetrics() {

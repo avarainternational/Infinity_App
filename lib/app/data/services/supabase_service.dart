@@ -26,6 +26,15 @@ class SupabaseService extends GetxService {
     }
 
     try {
+      try {
+        final _ = Supabase.instance.client;
+        isInitialized = true;
+        debugPrint('✅ Supabase already initialized.');
+        return this;
+      } catch (_) {
+        // Not initialized yet, proceed to initialize below
+      }
+
       await Supabase.initialize(
         url: config.supabaseUrl,
         // ignore: deprecated_member_use

@@ -15,6 +15,7 @@ abstract class UserRepository {
     required String activityLevel,
     required int dailyWaterGoalMl,
   });
+  Future<UserProfileModel?> updateDailyGoal(String userId, int goalMl);
   Future<UserProfileModel?> findUserByInviteCode(String inviteCode);
   Future<UserProfileModel?> addWellnessPoints(String userId, int points);
   Future<List<LeaderboardUser>> getLeaderboardUsers({String currentUserId = ''});
@@ -41,10 +42,19 @@ class UserRepositoryImpl implements UserRepository {
             .from('profiles')
             .select()
             .eq('id', userId)
-            .maybeSingle();
+            .limit(1);
 
-        if (response != null) {
-          final profile = UserProfileModel.fromJson(response);
+        if (response.isNotEmpty) {
+          var profile = UserProfileModel.fromJson(response.first);
+          // Ensure profile has an invite code
+          if (profile.inviteCode.trim().isEmpty) {
+            final generatedCode = UserProfileModel.generateInviteCode(profile.displayName);
+            profile = profile.copyWith(inviteCode: generatedCode);
+            await _supabaseService.client
+                .from('profiles')
+                .update({'invite_code': generatedCode})
+                .eq('id', userId);
+          }
           _localProfileCache[userId] = profile;
           return profile;
         }
@@ -59,11 +69,16 @@ class UserRepositoryImpl implements UserRepository {
 
   @override
   Future<UserProfileModel> upsertProfile(UserProfileModel profile) async {
-    _localProfileCache[profile.id] = profile;
+    // Ensure invite code is present
+    var toSave = profile;
+    if (toSave.inviteCode.trim().isEmpty) {
+      toSave = toSave.copyWith(inviteCode: UserProfileModel.generateInviteCode(toSave.displayName));
+    }
+    _localProfileCache[toSave.id] = toSave;
 
     if (_isLive) {
       try {
-        final data = profile.toJson();
+        final data = toSave.toJson();
         final response = await _supabaseService!.client
             .from('profiles')
             .upsert(data)
@@ -75,7 +90,7 @@ class UserRepositoryImpl implements UserRepository {
       }
     }
 
-    return profile;
+    return toSave;
   }
 
   @override
@@ -100,6 +115,18 @@ class UserRepositoryImpl implements UserRepository {
   }
 
   @override
+  Future<UserProfileModel?> updateDailyGoal(String userId, int goalMl) async {
+    final existing = await getUserProfile(userId);
+    final updated = (existing ?? UserProfileModel(id: userId, email: '', displayName: ''))
+        .copyWith(
+      dailyWaterGoalMl: goalMl,
+      updatedAt: DateTime.now(),
+    );
+
+    return upsertProfile(updated);
+  }
+
+  @override
   Future<UserProfileModel?> findUserByInviteCode(String inviteCode) async {
     final cleanCode = inviteCode.trim().toUpperCase();
     if (cleanCode.isEmpty) return null;
@@ -109,11 +136,11 @@ class UserRepositoryImpl implements UserRepository {
         final response = await _supabaseService!.client
             .from('profiles')
             .select()
-            .eq('invite_code', cleanCode)
-            .maybeSingle();
+            .ilike('invite_code', cleanCode)
+            .limit(1);
 
-        if (response != null) {
-          return UserProfileModel.fromJson(response);
+        if (response.isNotEmpty) {
+          return UserProfileModel.fromJson(response.first);
         }
       } catch (e) {
         debugPrint('⚠️ Error looking up invite code: $e');

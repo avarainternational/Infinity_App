@@ -1,3 +1,5 @@
+import 'package:infinity_wellness/app/core/utils/image_url_helper.dart';
+
 class UserProfileModel {
   const UserProfileModel({
     required this.id,
@@ -35,26 +37,57 @@ class UserProfileModel {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
-  /// Smart dynamic water goal calculation helper
+  /// Smart dynamic water goal calculation based on biometrics & lifestyle factors
   static int computeRecommendedGoal({
     required double weightKg,
     required String activityLevel,
+    double? heightCm,
+    int? age,
+    String? gender,
     bool isHotWeather = false,
   }) {
-    // Formula: Weight (kg) * 35 ml + activity boost + weather boost
-    int base = (weightKg * 35).round();
-    if (activityLevel.contains('Moderate') || activityLevel.contains('+300')) {
-      base += 300;
-    } else if (activityLevel.contains('Very') || activityLevel.contains('+600') || activityLevel.contains('Athletic')) {
+    // 1. Base metabolic hydration requirement: 35 ml per kg of body weight
+    int base = (weightKg.clamp(30.0, 200.0) * 35).round();
+
+    // 2. Height & surface area adjustment (+50 ml per 10 cm above 160 cm)
+    if (heightCm != null && heightCm > 160) {
+      final extraHeightSteps = ((heightCm - 160) / 10).round();
+      base += extraHeightSteps * 50;
+    }
+
+    // 3. Age adjustment: active youths/young adults have higher metabolic fluid needs
+    if (age != null && age > 0 && age <= 30) {
+      base += 100;
+    }
+
+    // 4. Gender adjustment (+200 ml for males due to higher lean muscle mass %)
+    if (gender != null &&
+        gender.toLowerCase().contains('male') &&
+        !gender.toLowerCase().contains('female')) {
+      base += 200;
+    }
+
+    // 5. Activity level boost
+    if (activityLevel.contains('Very') ||
+        activityLevel.contains('+600') ||
+        activityLevel.contains('Athletic')) {
       base += 600;
-    } else if (activityLevel.contains('Light') || activityLevel.contains('+150')) {
+    } else if (activityLevel.contains('Moderate') ||
+        activityLevel.contains('+300')) {
+      base += 300;
+    } else if (activityLevel.contains('Light') ||
+        activityLevel.contains('+150')) {
       base += 150;
     }
+
+    // 6. Climate / tropical weather bonus
     if (isHotWeather) {
       base += 250;
     }
-    // Round to nearest 50 ml
-    return ((base + 25) ~/ 50) * 50;
+
+    // 7. Clamp within healthy bounds (1500 ml to 5000 ml) and round to nearest 50 ml
+    final clamped = base.clamp(1500, 5000);
+    return ((clamped + 25) ~/ 50) * 50;
   }
 
   /// Generates a clean 6-character alphanumeric invite code
@@ -72,7 +105,7 @@ class UserProfileModel {
       id: json['id']?.toString() ?? '',
       email: json['email']?.toString() ?? '',
       displayName: json['display_name']?.toString() ?? 'Infinity Member',
-      avatarUrl: json['avatar_url']?.toString() ?? '',
+      avatarUrl: ImageUrlHelper.normalize(json['avatar_url']?.toString()) ?? (json['avatar_url']?.toString() ?? ''),
       weightKg: (json['weight_kg'] as num?)?.toDouble() ?? 68.0,
       heightCm: (json['height_cm'] as num?)?.toDouble() ?? 175.0,
       activityLevel: json['activity_level']?.toString() ?? 'Moderate Active',
