@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:infinity_wellness/app/core/base/base_controller.dart';
+import 'package:infinity_wellness/app/data/models/user_profile_model.dart';
 import 'package:infinity_wellness/app/data/repositories/hydration_repository.dart';
 import 'package:infinity_wellness/app/data/repositories/user_repository.dart';
 import 'package:infinity_wellness/app/data/services/auth_service.dart';
+import 'package:infinity_wellness/app/data/services/notification_service.dart';
 import 'package:infinity_wellness/app/features/home/controller/home_controller.dart';
 import 'package:infinity_wellness/app/features/hydration/model/hydration_models.dart';
 import 'package:infinity_wellness/app/features/partner/model/partner_detail_models.dart';
@@ -26,6 +29,7 @@ class HydrationDetailController extends BaseController {
   // Hydration Daily Metrics (Real data from Supabase)
   final currentWaterMl = 0.obs;
   final dailyGoalMl = 2600.obs;
+  final sipAmountMl = 250.obs;
   final selectedThemeKey = 'energetic'.obs;
 
   // Selected Beverage Type
@@ -39,6 +43,8 @@ class HydrationDetailController extends BaseController {
   // Smart Goal Calculator inputs
   final userWeightKg = 68.0.obs;
   final userHeightCm = 175.0.obs;
+  final userAge = 22.obs;
+  final userGender = 'Prefer not to say'.obs;
   final activityLevel = 'Moderate (+300 ml)'.obs;
   final isHotWeather = false.obs;
 
@@ -63,18 +69,14 @@ class HydrationDetailController extends BaseController {
       PartnerThemes.getByKey(selectedThemeKey.value);
 
   int get calculatedRecommendedGoal {
-    // Standard formula: Weight (kg) * 35 ml + activity boost + weather boost
-    int base = (userWeightKg.value * 35).round();
-    if (activityLevel.value.contains('+300')) {
-      base += 300;
-    } else if (activityLevel.value.contains('+600')) {
-      base += 600;
-    }
-    if (isHotWeather.value) {
-      base += 250;
-    }
-    // Round to nearest 50 ml
-    return ((base + 25) ~/ 50) * 50;
+    return UserProfileModel.computeRecommendedGoal(
+      weightKg: userWeightKg.value,
+      heightCm: userHeightCm.value,
+      age: userAge.value,
+      gender: userGender.value,
+      activityLevel: activityLevel.value,
+      isHotWeather: isHotWeather.value,
+    );
   }
 
   @override
@@ -86,12 +88,27 @@ class HydrationDetailController extends BaseController {
       dailyGoalMl.value = home.dailyGoalMl.value;
       selectedThemeKey.value = home.userThemeKey.value;
       personalStreakDays.value = home.personalStreakDays.value;
+      sipAmountMl.value = home.sipAmountMl.value;
+    }
+
+    if (Get.isRegistered<NotificationService>()) {
+      isRemindersEnabled.value = NotificationService.to.areRemindersEnabled.value;
+      reminderIntervalMins.value = NotificationService.to.reminderIntervalMins.value;
     }
 
     _loadHydrationData();
   }
 
   Future<void> _loadHydrationData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      sipAmountMl.value = prefs.getInt('pref_user_sip_amount_ml') ?? 250;
+      final cachedGoal = prefs.getInt('pref_user_daily_water_goal_ml');
+      if (cachedGoal != null && cachedGoal > 0) {
+        dailyGoalMl.value = cachedGoal;
+      }
+    } catch (_) {}
+
     final userId = _authService?.currentUser.value?.id ?? '';
     if (userId.isNotEmpty) {
       try {
@@ -99,7 +116,12 @@ class HydrationDetailController extends BaseController {
         if (profile != null) {
           userWeightKg.value = profile.weightKg;
           userHeightCm.value = profile.heightCm;
-          dailyGoalMl.value = profile.dailyWaterGoalMl;
+          if (profile.age > 0) userAge.value = profile.age;
+          if (profile.gender.isNotEmpty) userGender.value = profile.gender;
+          if (profile.activityLevel.isNotEmpty) activityLevel.value = profile.activityLevel;
+          if (profile.dailyWaterGoalMl > 0) {
+            dailyGoalMl.value = profile.dailyWaterGoalMl;
+          }
         }
 
         final logs = await _hydrationRepository.getTodayLogs(userId);
@@ -263,36 +285,88 @@ class HydrationDetailController extends BaseController {
     );
   }
 
-  void applyCalculatedGoal() {
-    final newGoal = calculatedRecommendedGoal;
-    dailyGoalMl.value = newGoal;
-    _homeController?.dailyGoalMl.value = newGoal;
+  Future<void> updateDailyGoal(int newGoalMl) async {
+    final clampedGoal = newGoalMl.clamp(1000, 6000);
+    dailyGoalMl.value = clampedGoal;
+    _homeController?.dailyGoalMl.value = clampedGoal;
 
-    final userId = _authService?.currentUser.value?.id ?? '';
-    if (userId.isNotEmpty) {
-      _userRepository.updateHealthMetrics(
-        userId: userId,
-        weightKg: userWeightKg.value,
-        heightCm: userHeightCm.value,
-        activityLevel: activityLevel.value,
-        dailyWaterGoalMl: newGoal,
-      );
+    // Refresh percentage and adherence
+    if (clampedGoal > 0) {
+      weeklyAdherencePercent.value =
+          ((currentWaterMl.value / clampedGoal) * 100).clamp(0, 100).toInt();
     }
 
-    Get.snackbar(
-      'Daily Goal Updated 🎯',
-      'Recommended daily goal set to $newGoal ml based on your health metrics.',
-      snackPosition: SnackPosition.TOP,
-      duration: const Duration(seconds: 2),
-      backgroundColor: currentTheme.accentColor.withValues(alpha: 0.92),
-      colorText: Colors.white,
-      margin: const EdgeInsets.all(12),
-      borderRadius: 14,
-    );
+    // Persist to SharedPreferences
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('pref_user_daily_water_goal_ml', clampedGoal);
+    } catch (_) {}
+
+    // Persist to Supabase
+    final userId = _authService?.currentUser.value?.id ?? '';
+    if (userId.isNotEmpty) {
+      try {
+        await _userRepository.updateDailyGoal(userId, clampedGoal);
+        if (_authService?.userProfile.value != null) {
+          _authService!.userProfile.value =
+              _authService!.userProfile.value!.copyWith(
+            dailyWaterGoalMl: clampedGoal,
+          );
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error persisting updated daily goal: $e');
+      }
+    }
+
+    if (Get.context != null) {
+      Get.snackbar(
+        'Daily Goal Saved! 🎯',
+        'Your daily hydration target is now $clampedGoal ml.',
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 2),
+        backgroundColor: currentTheme.accentColor.withValues(alpha: 0.92),
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(12),
+        borderRadius: 14,
+      );
+    }
+  }
+
+  Future<void> updateSipAmount(int amountMl) async {
+    final clampedSip = amountMl.clamp(50, 1000);
+    sipAmountMl.value = clampedSip;
+    _homeController?.sipAmountMl.value = clampedSip;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('pref_user_sip_amount_ml', clampedSip);
+    } catch (_) {}
+
+    if (Get.context != null) {
+      Get.snackbar(
+        '1 Sip Amount Updated 🥤',
+        'Quick-log sip vessel configured to $clampedSip ml.',
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 2),
+        backgroundColor: const Color(0xFF00A3FF).withValues(alpha: 0.92),
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(12),
+        borderRadius: 14,
+      );
+    }
+  }
+
+  void applyCalculatedGoal() {
+    final newGoal = calculatedRecommendedGoal;
+    updateDailyGoal(newGoal);
   }
 
   void toggleReminders(bool value) {
     isRemindersEnabled.value = value;
+    if (Get.isRegistered<NotificationService>()) {
+      NotificationService.to.setRemindersEnabled(value);
+    }
+
     Get.snackbar(
       value ? 'Reminders Activated 🔔' : 'Reminders Paused 🔕',
       value
@@ -301,5 +375,21 @@ class HydrationDetailController extends BaseController {
       snackPosition: SnackPosition.BOTTOM,
       duration: const Duration(seconds: 2),
     );
+  }
+
+  void setReminderInterval(int minutes) {
+    reminderIntervalMins.value = minutes;
+    if (isRemindersEnabled.value && Get.isRegistered<NotificationService>()) {
+      NotificationService.to.schedulePeriodicHydrationReminders(intervalMinutes: minutes);
+    }
+  }
+
+  void sendTestReminderNotification() {
+    if (Get.isRegistered<NotificationService>()) {
+      NotificationService.to.showInstantNotification(
+        title: 'Hydration Check! 💧',
+        body: 'Time to enjoy your ${sipAmountMl.value} ml drink and log your intake!',
+      );
+    }
   }
 }

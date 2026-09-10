@@ -15,7 +15,7 @@ class SupabaseConfig {
       'assets/config/supabase_config.example.json';
 
   // Fallback / default placeholder credentials
-  static const String defaultUrl = 'https://YOUR_PROJECT_REF.supabase.co';
+  static const String defaultUrl = 'https://supabase-proxy-infinity-wellness.avarainternational.workers.dev';
   static const String defaultAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example';
   static const String defaultRedirectUrl = 'io.supabase.infinitywellness://login-callback/';
 

@@ -218,6 +218,34 @@ void main() {
         throwsException,
       );
     });
+
+    test('pairs successfully with lowercase invite code and queries partner intake', () async {
+      final userRepo = UserRepositoryImpl();
+      await userRepo.upsertProfile(const UserProfileModel(
+        id: 'partner-bob-uuid',
+        email: 'bob@infinitywellness.io',
+        displayName: 'Bob Taylor',
+        inviteCode: 'BOB123',
+        isOnboarded: true,
+      ));
+
+      final hydrationRepo = HydrationRepositoryImpl();
+      await hydrationRepo.logWaterIntake(userId: 'partner-bob-uuid', amountMl: 750);
+
+      final repository = SynergyRepositoryImpl(
+        userRepository: userRepo,
+        hydrationRepository: hydrationRepo,
+      );
+
+      final pair = await repository.connectPartnerWithCode(
+        currentUserId: 'alice-user-uuid',
+        inviteCode: 'bob123', // lowercase input
+      );
+
+      expect(pair.partnerProfile?.displayName, equals('Bob Taylor'));
+      expect(pair.partnerTodayIntakeMl, equals(750));
+      expect(await repository.getPartnerTodayIntake('partner-bob-uuid'), equals(750));
+    });
   });
 
   group('ProfileController & PartnerDetailController Reactive States', () {

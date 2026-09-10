@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:infinity_wellness/app/constant/routing/app_route.dart';
 import 'package:infinity_wellness/app/core/base/base_controller.dart';
 import 'package:infinity_wellness/app/data/models/user_profile_model.dart';
@@ -48,6 +49,9 @@ class OnboardingSetupController extends BaseController {
   int get calculatedGoalMl => UserProfileModel.computeRecommendedGoal(
         weightKg: weightKg.value,
         activityLevel: selectedActivity.value,
+        heightCm: heightCm.value,
+        age: age.value,
+        gender: selectedGender.value,
       );
 
   @override
@@ -116,6 +120,12 @@ class OnboardingSetupController extends BaseController {
       final saved = await _userRepository.upsertProfile(updatedProfile);
       _authService.userProfile.value = saved;
       _authService.userName.value = saved.displayName;
+
+      // Save to local cache for offline/instant hydration calculation
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('pref_user_daily_water_goal_ml', calculatedGoalMl);
+      } catch (_) {}
 
       // Optional partner pairing
       final partnerCode = partnerCodeController.text.trim();

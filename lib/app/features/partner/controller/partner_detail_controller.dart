@@ -3,7 +3,10 @@ import 'package:get/get.dart';
 import 'package:infinity_wellness/app/core/base/base_controller.dart';
 import 'package:infinity_wellness/app/data/models/synergy_models.dart';
 import 'package:infinity_wellness/app/data/repositories/synergy_repository.dart';
+import 'package:infinity_wellness/app/data/repositories/user_repository.dart';
 import 'package:infinity_wellness/app/data/services/auth_service.dart';
+import 'package:infinity_wellness/app/data/services/notification_service.dart';
+import 'package:infinity_wellness/app/data/services/supabase_service.dart';
 import 'package:infinity_wellness/app/features/home/controller/home_controller.dart';
 import 'package:infinity_wellness/app/features/partner/model/partner_detail_models.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -16,6 +19,9 @@ class PartnerDetailController extends BaseController {
 
   AuthService? get _authService =>
       Get.isRegistered<AuthService>() ? AuthService.to : null;
+
+  UserRepository get _userRepository =>
+      Get.isRegistered<UserRepository>() ? Get.find<UserRepository>() : UserRepositoryImpl();
 
   RealtimeChannel? _realtimeChannel;
 
@@ -57,6 +63,8 @@ class PartnerDetailController extends BaseController {
       });
     }
 
+    _ensureUserInviteCode();
+
     final args = Get.arguments;
     if (args is SynergyPartner) {
       partner = args;
@@ -84,8 +92,26 @@ class PartnerDetailController extends BaseController {
     _initLivePartnerSync();
   }
 
+  Future<void> _ensureUserInviteCode() async {
+    final currentUserId = _authService?.currentUser.value?.id ??
+        (Get.isRegistered<SupabaseService>() ? SupabaseService.to.client.auth.currentUser?.id : null) ??
+        '';
+    if (userInviteCode.value.isEmpty && currentUserId.isNotEmpty) {
+      try {
+        final profile = await _userRepository.getUserProfile(currentUserId);
+        if (profile != null && profile.inviteCode.isNotEmpty) {
+          userInviteCode.value = profile.inviteCode;
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error retrieving user invite code: $e');
+      }
+    }
+  }
+
   Future<void> _initLivePartnerSync() async {
-    final currentUserId = _authService?.currentUser.value?.id ?? '';
+    final currentUserId = _authService?.currentUser.value?.id ??
+        (Get.isRegistered<SupabaseService>() ? SupabaseService.to.client.auth.currentUser?.id : null) ??
+        '';
     if (currentUserId.isNotEmpty) {
       try {
         final pair = await _synergyRepository.getActivePair(currentUserId);
@@ -95,7 +121,7 @@ class PartnerDetailController extends BaseController {
           partnerId.value = p.id;
           partnerName.value = p.displayName;
           partnerEmail.value = p.email;
-          partnerGoalMl.value = p.dailyWaterGoalMl;
+          partnerGoalMl.value = p.dailyWaterGoalMl > 0 ? p.dailyWaterGoalMl : 2600;
           streakCount.value = pair.streakCount;
           selectedThemeKey.value = pair.themeKey;
 
@@ -103,13 +129,34 @@ class PartnerDetailController extends BaseController {
           partnerIntakeMl.value = partnerIntake;
           isLiveSynced.value = true;
 
+          partner = SynergyPartner(
+            id: p.id,
+            name: p.displayName,
+            intakeMl: partnerIntake,
+            goalMl: partnerGoalMl.value,
+            themeKey: pair.themeKey,
+          );
+
+          if (Get.isRegistered<HomeController>()) {
+            Get.find<HomeController>().updateActivePartner(partner);
+          }
+
+          // Fetch partner logs, past days, and recent nudges
+          await _loadPartnerSubData(p.id, partnerGoalMl.value);
+
           // Subscribe to live Realtime updates
           _realtimeChannel?.unsubscribe();
           _realtimeChannel = _synergyRepository.subscribeToPartnerUpdates(
             currentUserId: currentUserId,
             partnerId: p.id,
-            onPartnerWaterLogged: (intakeMl) {
+            onPartnerWaterLogged: (intakeMl) async {
               partnerIntakeMl.value = intakeMl;
+              partner.intakeMl.value = intakeMl;
+
+              // Refresh today water logs
+              final logs = await _synergyRepository.getPartnerTodayWaterLogs(p.id);
+              waterLogs.assignAll(logs);
+
               Get.snackbar(
                 'Partner Hydrated! 💧',
                 '${partnerName.value} just logged water intake! Total: $intakeMl / ${partnerGoalMl.value} ml',
@@ -132,6 +179,13 @@ class PartnerDetailController extends BaseController {
               );
               reminderLogs.insert(0, reminderLog);
 
+              if (Get.isRegistered<NotificationService>()) {
+                NotificationService.to.showInstantNotification(
+                  title: '💧 Synergy Nudge: ${nudge.nudgeType.defaultTitle}',
+                  body: nudge.message ?? '${partnerName.value} sent you a reminder!',
+                );
+              }
+
               Get.snackbar(
                 nudge.nudgeType.defaultTitle,
                 nudge.message ?? '${partnerName.value} sent you a reminder!',
@@ -142,6 +196,8 @@ class PartnerDetailController extends BaseController {
               );
             },
           );
+        } else {
+          hasActivePartner.value = false;
         }
       } catch (e) {
         debugPrint('⚠️ Error initializing live partner sync: $e');
@@ -149,11 +205,41 @@ class PartnerDetailController extends BaseController {
     }
   }
 
+  Future<void> _loadPartnerSubData(String pId, int goalMl) async {
+    try {
+      final logs = await _synergyRepository.getPartnerTodayWaterLogs(pId);
+      waterLogs.assignAll(logs);
+
+      final days = await _synergyRepository.getPartnerPastDays(pId, goalMl);
+      pastDays.assignAll(days);
+
+      final nudges = await _synergyRepository.getRecentNudges(pId);
+      if (nudges.isNotEmpty) {
+        final logsList = nudges.map((nudge) {
+          final now = nudge.createdAt;
+          final timeFormatted =
+              '${now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour)}:${now.minute.toString().padLeft(2, '0')} ${now.hour >= 12 ? 'PM' : 'AM'}';
+          return PartnerReminderLog(
+            id: nudge.id,
+            timeStr: 'Today, $timeFormatted',
+            message: nudge.message ?? 'Hydration nudge from ${partnerName.value} 💧',
+            icon: nudge.nudgeType == SynergyNudgeType.screenBreak
+                ? Icons.notifications_active_rounded
+                : Icons.water_drop_rounded,
+          );
+        }).toList();
+        reminderLogs.assignAll(logsList);
+      }
+    } catch (e) {
+      debugPrint('⚠️ Error loading partner sub data: $e');
+    }
+  }
+
   void _loadPartnerData(SynergyPartner p) {
     partnerId.value = p.id;
     partnerName.value = p.name;
-    partnerIntakeMl.value = p.intakeMl;
-    partnerGoalMl.value = p.goalMl;
+    partnerIntakeMl.value = p.intakeMl.value;
+    partnerGoalMl.value = p.goalMl.value > 0 ? p.goalMl.value : 2600;
     selectedThemeKey.value = p.themeKey.value;
     pastDays.assignAll(p.pastDays);
     reminderLogs.assignAll(p.reminders);
@@ -196,7 +282,9 @@ class PartnerDetailController extends BaseController {
     reminderLogs.insert(0, newReminder);
     partner.reminders.insert(0, newReminder);
 
-    final currentUserId = _authService?.currentUser.value?.id ?? '';
+    final currentUserId = _authService?.currentUser.value?.id ??
+        (Get.isRegistered<SupabaseService>() ? SupabaseService.to.client.auth.currentUser?.id : null) ??
+        '';
     final targetPartnerId = partnerId.value.isNotEmpty ? partnerId.value : partner.id;
 
     if (currentUserId.isNotEmpty && targetPartnerId.isNotEmpty) {
@@ -223,55 +311,113 @@ class PartnerDetailController extends BaseController {
   }
 
   Future<void> connectPartnerWithCode(String inviteCode) async {
-    final currentUserId = _authService?.currentUser.value?.id ?? '';
-    if (inviteCode.trim().isEmpty) return;
+    final currentUserId = _authService?.currentUser.value?.id ??
+        (Get.isRegistered<SupabaseService>() ? SupabaseService.to.client.auth.currentUser?.id : null) ??
+        '';
+    final code = inviteCode.trim().toUpperCase();
+    if (code.isEmpty) return;
 
     try {
       final pair = await _synergyRepository.connectPartnerWithCode(
         currentUserId: currentUserId,
-        inviteCode: inviteCode.trim(),
+        inviteCode: code,
       );
 
       if (pair.partnerProfile != null) {
-        partnerId.value = pair.partnerProfile!.id;
-        partnerName.value = pair.partnerProfile!.displayName;
-        partnerEmail.value = pair.partnerProfile!.email;
-        partnerGoalMl.value = pair.partnerProfile!.dailyWaterGoalMl;
+        final p = pair.partnerProfile!;
+        hasActivePartner.value = true;
+        partnerId.value = p.id;
+        partnerName.value = p.displayName;
+        partnerEmail.value = p.email;
+        partnerGoalMl.value = p.dailyWaterGoalMl > 0 ? p.dailyWaterGoalMl : 2600;
         partnerIntakeMl.value = pair.partnerTodayIntakeMl;
         streakCount.value = pair.streakCount;
+        selectedThemeKey.value = pair.themeKey;
         isLiveSynced.value = true;
+
+        partner = SynergyPartner(
+          id: p.id,
+          name: p.displayName,
+          intakeMl: pair.partnerTodayIntakeMl,
+          goalMl: partnerGoalMl.value,
+          themeKey: pair.themeKey,
+        );
+
+        if (Get.isRegistered<HomeController>()) {
+          Get.find<HomeController>().updateActivePartner(partner);
+        }
+
+        await _loadPartnerSubData(p.id, partnerGoalMl.value);
       }
 
-      if (Get.context != null) {
-        Get.back(); // Dismiss dialog
-        Get.snackbar(
-          'Partner Connected! 🎉',
-          'You are now connected with ${partnerName.value} for 1-on-1 Synergy!',
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: currentTheme.accentColor.withValues(alpha: 0.92),
-          colorText: Colors.white,
-          duration: const Duration(seconds: 3),
-        );
+      inviteInputController.clear();
+
+      if (Get.isDialogOpen == true) {
+        Get.back(); // Dismiss modal dialog if one was opened
       }
+
+      Get.snackbar(
+        'Partner Connected! 🎉',
+        'You are now connected with ${partnerName.value} for 1-on-1 Synergy!',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: currentTheme.accentColor.withValues(alpha: 0.92),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
 
       _initLivePartnerSync();
     } catch (e) {
-      if (Get.context != null) {
-        Get.snackbar(
-          'Connection Error',
-          e.toString().replaceAll('Exception: ', ''),
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.redAccent.withValues(alpha: 0.9),
-          colorText: Colors.white,
-          duration: const Duration(seconds: 4),
-        );
+      Get.snackbar(
+        'Connection Error',
+        e.toString().replaceAll('Exception: ', ''),
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.redAccent.withValues(alpha: 0.9),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+      );
+    }
+  }
+
+  Future<void> disconnectPartner() async {
+    final currentUserId = _authService?.currentUser.value?.id ??
+        (Get.isRegistered<SupabaseService>() ? SupabaseService.to.client.auth.currentUser?.id : null) ??
+        '';
+    try {
+      final pair = await _synergyRepository.getActivePair(currentUserId);
+      if (pair != null) {
+        await _synergyRepository.disconnectPartner(pairId: pair.id);
       }
+      hasActivePartner.value = false;
+      partnerId.value = '';
+      partnerName.value = '';
+      partnerIntakeMl.value = 0;
+      isLiveSynced.value = false;
+      waterLogs.clear();
+      pastDays.clear();
+      reminderLogs.clear();
+      _realtimeChannel?.unsubscribe();
+
+      if (Get.isRegistered<HomeController>()) {
+        Get.find<HomeController>().clearPartner();
+      }
+
+      Get.snackbar(
+        'Partner Disconnected',
+        '1-on-1 synergy partnership has been disconnected.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.grey.shade800,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      debugPrint('⚠️ Error disconnecting partner: $e');
     }
   }
 
   @override
   void onClose() {
+    inviteInputController.dispose();
     _realtimeChannel?.unsubscribe();
     super.onClose();
   }
 }
+

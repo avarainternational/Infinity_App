@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:infinity_wellness/app/constant/resources/app_colors.dart';
 import 'package:infinity_wellness/app/core/base/base_view.dart';
 import 'package:infinity_wellness/app/features/feed/screen/feed_screen.dart';
+import 'package:infinity_wellness/app/features/home/controller/home_controller.dart';
 import 'package:infinity_wellness/app/features/home/screen/home_screen.dart';
 import 'package:infinity_wellness/app/features/mini_app_store/screen/mini_app_store_screen.dart';
 import 'package:infinity_wellness/app/features/profile/screen/profile_screen.dart';
@@ -114,14 +115,19 @@ class ShellScreen extends BaseView<ShellController> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      FloatingWaterDroplet(
-                        isSelected: isSelected,
-                        isHighlighted: true,
-                        showTooltip: false,
-                        width: 54,
-                        height: 64,
-                        onTap: () => controller.selectTab(2),
-                      ),
+                      Obx(() {
+                        final home = Get.isRegistered<HomeController>() ? Get.find<HomeController>() : null;
+                        final sip = home?.sipAmountMl.value ?? 250;
+                        return FloatingWaterDroplet(
+                          isSelected: isSelected,
+                          isHighlighted: true,
+                          amountMl: sip,
+                          showTooltip: false,
+                          width: 54,
+                          height: 64,
+                          onTap: () => controller.selectTab(2),
+                        );
+                      }),
                       const SizedBox(height: 2),
                       Text(
                         'Home',

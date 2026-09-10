@@ -93,42 +93,118 @@ class PartnerDetailScreen extends BaseView<PartnerDetailController> {
         ),
       ),
       actions: [
-        IconButton(
-          icon: Container(
-            padding: const EdgeInsets.all(7),
-            decoration: BoxDecoration(
-              color: AppColors.cyanBadgeBg,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.person_add_rounded,
-              color: AppColors.primary,
-              size: 20,
-            ),
-          ),
-          onPressed: () => _showConnectPartnerDialog(context),
-          tooltip: 'Pair Partner Code',
-        ),
-        Padding(
-          padding: const EdgeInsets.only(right: 14),
-          child: IconButton(
-            icon: Container(
-              padding: const EdgeInsets.all(7),
-              decoration: BoxDecoration(
-                color: AppColors.cyanBadgeBg,
-                borderRadius: BorderRadius.circular(10),
+        Obx(() {
+          if (!controller.hasActivePartner.value) {
+            return const SizedBox.shrink();
+          }
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: AppColors.cyanBadgeBg,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.water_drop_rounded,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
+                ),
+                onPressed: () => controller.sendNudge(),
+                tooltip: 'Nudge Partner',
               ),
-              child: const Icon(
-                Icons.water_drop_rounded,
-                color: AppColors.primary,
-                size: 20,
+              PopupMenuButton<String>(
+                icon: Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: AppColors.cyanBadgeBg,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.more_vert_rounded,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
+                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                onSelected: (value) {
+                  if (value == 'disconnect') {
+                    _showDisconnectDialog(context);
+                  } else if (value == 'switch') {
+                    _showConnectPartnerDialog(context);
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'switch',
+                    child: Row(
+                      children: [
+                        Icon(Icons.swap_horiz_rounded, size: 18, color: AppColors.primary),
+                        SizedBox(width: 8),
+                        Text('Switch Partner', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'disconnect',
+                    child: Row(
+                      children: [
+                        Icon(Icons.link_off_rounded, size: 18, color: Colors.redAccent),
+                        SizedBox(width: 8),
+                        Text('Disconnect Partner', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.redAccent)),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ),
-            onPressed: () => controller.sendNudge(),
-            tooltip: 'Nudge Partner',
-          ),
-        ),
+              const SizedBox(width: 8),
+            ],
+          );
+        }),
       ],
+    );
+  }
+
+  void _showDisconnectDialog(BuildContext context) {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.link_off_rounded, color: Colors.redAccent),
+            SizedBox(width: 8),
+            Text(
+              'Disconnect Partner?',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to disconnect from this 1-on-1 synergy partnership? Your shared streak will be paused.',
+          style: TextStyle(fontSize: 13, color: AppColors.textSlate, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () {
+              Get.back();
+              controller.disconnectPartner();
+            },
+            child: const Text('Disconnect'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -155,6 +231,23 @@ class PartnerDetailScreen extends BaseView<PartnerDetailController> {
             const Text(
               'Enter your partner\'s 6-character invite code to establish live 1-on-1 synergy:',
               style: TextStyle(fontSize: 13, color: AppColors.textSlate, height: 1.4),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.iceBlueBg,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.iceBlueBorder),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Your Code:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSlate)),
+                  Obx(() => Text(controller.userInviteCode.value.isNotEmpty ? controller.userInviteCode.value : '...',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.primary))),
+                ],
+              ),
             ),
             const SizedBox(height: 14),
             TextField(
@@ -839,6 +932,35 @@ class PartnerDetailScreen extends BaseView<PartnerDetailController> {
 
           Obx(() {
             final reminders = controller.reminderLogs;
+            if (reminders.isEmpty) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.neutralSurface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.borderLight),
+                ),
+                child: Column(
+                  children: [
+                    Icon(Icons.notifications_none_rounded, color: AppColors.textSlate.withValues(alpha: 0.6), size: 26),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'No nudges sent to partner yet today',
+                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.textSlate),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 3),
+                    const Text(
+                      'Tap the Quick Nudge buttons above to encourage your partner!',
+                      style: TextStyle(fontSize: 11, color: AppColors.textSlate),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              );
+            }
+
             return Column(
               children: reminders.map((rem) {
                 return Padding(
@@ -952,6 +1074,35 @@ class PartnerDetailScreen extends BaseView<PartnerDetailController> {
 
           Obx(() {
             final logs = controller.waterLogs;
+            if (logs.isEmpty) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.neutralSurface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.borderLight),
+                ),
+                child: Column(
+                  children: [
+                    Icon(Icons.water_drop_outlined, color: AppColors.textSlate.withValues(alpha: 0.6), size: 26),
+                    const SizedBox(height: 6),
+                    Text(
+                      'No water logged by ${controller.partnerName.value} today yet',
+                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.textSlate),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 3),
+                    const Text(
+                      'Send them a nudge to remind them to hydrate!',
+                      style: TextStyle(fontSize: 11, color: AppColors.textSlate),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              );
+            }
+
             return Column(
               children: logs.map((log) {
                 return Padding(

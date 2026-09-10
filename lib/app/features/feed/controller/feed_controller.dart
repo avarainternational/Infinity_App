@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:infinity_wellness/app/constant/resources/app_images.dart';
 import 'package:infinity_wellness/app/core/base/base_controller.dart';
+import 'package:infinity_wellness/app/core/utils/image_url_helper.dart';
 import 'package:infinity_wellness/app/data/repositories/feed_repository.dart';
 import 'package:infinity_wellness/app/data/repositories/user_repository.dart';
 import 'package:infinity_wellness/app/data/services/auth_service.dart';
@@ -118,7 +119,7 @@ class FeedItem {
       bannerTag: json['badge_text']?.toString() ?? 'NEWS',
       publishedTime: formatTimeAgo(json['published_at'] ?? json['created_at']),
       timeAgo: formatTimeAgo(json['published_at'] ?? json['created_at']),
-      imageUrl: json['image_url']?.toString(),
+      imageUrl: ImageUrlHelper.normalize(json['image_url']?.toString()),
       priceTag: json['price_tag']?.toString(),
       badgeOverlayText: json['badge_overlay_text']?.toString(),
       externalUrl: json['external_url']?.toString(),
@@ -188,10 +189,12 @@ class CommunityChallenge {
 
 class FeedController extends BaseController {
   FeedController({
+    List<FeedItem>? initialFeedItems,
     FeedRepository? feedRepository,
     UserRepository? userRepository,
   })  : _feedRepository = feedRepository ?? (Get.isRegistered<FeedRepository>() ? Get.find<FeedRepository>() : FeedRepositoryImpl()),
-        _userRepository = userRepository ?? (Get.isRegistered<UserRepository>() ? Get.find<UserRepository>() : UserRepositoryImpl());
+        _userRepository = userRepository ?? (Get.isRegistered<UserRepository>() ? Get.find<UserRepository>() : UserRepositoryImpl()),
+        liveFeedItems = <FeedItem>[...(initialFeedItems ?? [])].obs;
 
   final FeedRepository _feedRepository;
   final UserRepository _userRepository;
@@ -200,6 +203,14 @@ class FeedController extends BaseController {
   final activeTab = SocialTab.feed.obs;
   final selectedCategory = 'All'.obs;
   final categories = const ['All', 'Saved', 'Medical News', 'Myth vs. Fact', 'Promotions'];
+
+  // Likes state (tracked by post ID without text 'likes')
+  final likedPostIds = <String>{}.obs;
+  final postLikesCount = <String, int>{}.obs;
+
+  bool isLiked(String id) => likedPostIds.contains(id);
+
+  int getLikes(FeedItem item) => postLikesCount[item.id] ?? item.likesCount;
 
   // Leaderboard filters & data
   final leaderboardFilter = 'Weekly'.obs;
@@ -308,7 +319,7 @@ class FeedController extends BaseController {
     ),
   ].obs;
 
-  static const defaultFeedItems = <FeedItem>[
+  static const sampleFeedItems = <FeedItem>[
     FeedItem(
       id: 'feed-1',
       authorName: 'M Travel',
@@ -403,8 +414,9 @@ class FeedController extends BaseController {
       sharesCount: 67,
     ),
   ];
+  static const defaultFeedItems = sampleFeedItems;
 
-  late final RxList<FeedItem> liveFeedItems = <FeedItem>[...defaultFeedItems].obs;
+  final RxList<FeedItem> liveFeedItems;
   List<FeedItem> get feedItems => liveFeedItems;
   final isLoadingFeed = false.obs;
 
@@ -420,11 +432,11 @@ class FeedController extends BaseController {
     isLoadingFeed.value = true;
     try {
       final livePosts = await _feedRepository.fetchFeedPosts();
-      if (livePosts.isNotEmpty) {
-        liveFeedItems.assignAll(livePosts);
-      }
+      liveFeedItems.assignAll(livePosts);
       await _loadUserFeedInteractions();
       await _loadLeaderboard();
+    } catch (e) {
+      debugPrint('⚠️ Error refreshing live feed posts: $e');
     } finally {
       isLoadingFeed.value = false;
     }
@@ -434,9 +446,9 @@ class FeedController extends BaseController {
     isLoadingFeed.value = true;
     try {
       final livePosts = await _feedRepository.fetchFeedPosts();
-      if (livePosts.isNotEmpty) {
-        liveFeedItems.assignAll(livePosts);
-      }
+      liveFeedItems.assignAll(livePosts);
+    } catch (e) {
+      debugPrint('⚠️ Error loading live feed posts from Supabase: $e');
     } finally {
       isLoadingFeed.value = false;
     }
@@ -531,6 +543,26 @@ class FeedController extends BaseController {
         authorName: item.authorName,
       );
     }
+  }
+
+  Future<void> toggleLike(FeedItem item) async {
+    final wasLiked = isLiked(item.id);
+    final current = getLikes(item);
+    final newLiked = !wasLiked;
+
+    if (newLiked) {
+      likedPostIds.add(item.id);
+      postLikesCount[item.id] = current + 1;
+    } else {
+      likedPostIds.remove(item.id);
+      postLikesCount[item.id] = (current - 1).clamp(0, 999999);
+    }
+
+    await _feedRepository.toggleLikePost(
+      postId: item.id,
+      isLiking: newLiked,
+      currentLikes: current,
+    );
   }
 
   // Expand / collapse state

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:infinity_wellness/app/constant/resources/app_colors.dart';
+import 'package:infinity_wellness/app/constant/routing/app_route.dart';
 import 'package:infinity_wellness/app/core/base/base_view.dart';
+import 'package:infinity_wellness/app/core/utils/image_url_helper.dart';
 import 'package:infinity_wellness/app/features/feed/controller/feed_controller.dart';
 import 'package:infinity_wellness/app/features/wallet/utility/wallet_ui_metrics.dart';
 
@@ -386,34 +388,44 @@ class FeedScreen extends BaseView<FeedController> {
         border: Border.all(color: WalletColors.border, width: 1.0),
         boxShadow: WalletShadows.level1,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 1. Author & Tag Header Row
-          _buildPostAuthorHeader(context, item),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(WalletRadius.xl),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => Get.toNamed(Routes.feedDetail, arguments: item),
+          splashColor: WalletColors.primary.withValues(alpha: 0.08),
+          highlightColor: WalletColors.primary.withValues(alpha: 0.04),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. Author & Tag Header Row
+              _buildPostAuthorHeader(context, item),
 
-          // 2. Caption / Post Body Text (Top of Graphic - Facebook Style)
-          if (item.caption.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
-              child: Text(
-                item.caption,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: WalletColors.textPrimary,
-                  height: 1.4,
-                  letterSpacing: -0.1,
+              // 2. Caption / Post Body Text (Top of Graphic - Facebook Style)
+              if (item.caption.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
+                  child: Text(
+                    item.caption,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: WalletColors.textPrimary,
+                      height: 1.4,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
                 ),
-              ),
-            ),
 
-          // 3. 16:9 Visual Graphic Banner
-          _buildPostBannerGraphic(context, item),
+              // 3. 16:9 Visual Graphic Banner
+              _buildPostBannerGraphic(context, item),
 
-          // 4. Action Row (Timestamp, Save, Share)
-          _buildPostActionRow(context, item),
-        ],
+              // 4. Action Row (Timestamp, Save, Share)
+              _buildPostActionRow(context, item),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -515,10 +527,27 @@ class FeedScreen extends BaseView<FeedController> {
         fit: StackFit.expand,
         children: [
           // Background Visual (Network or Asset or Gradient Fallback)
-          if (item.imageUrl != null && item.imageUrl!.startsWith('http'))
+          if (ImageUrlHelper.normalize(item.imageUrl) != null &&
+              ImageUrlHelper.normalize(item.imageUrl)!.startsWith('http'))
             Image.network(
-              item.imageUrl!,
+              ImageUrlHelper.normalize(item.imageUrl)!,
               fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  color: const Color(0xFFF1F5F9),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                          : null,
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                );
+              },
               errorBuilder: (context, error, stackTrace) =>
                   item.imageAsset != null
                       ? Image.asset(item.imageAsset!, fit: BoxFit.cover, errorBuilder: (c, e, s) => _buildFallbackGradientGraphic(item))
@@ -644,6 +673,20 @@ class FeedScreen extends BaseView<FeedController> {
           ),
           const Spacer(),
 
+          // Like Action Button (Symbol only + count, NO text "likes")
+          Obx(() {
+            final isLiked = controller.isLiked(item.id);
+            final count = controller.getLikes(item);
+            return _buildActionButton(
+              icon: isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+              label: '$count',
+              iconColor: isLiked ? const Color(0xFFEF4444) : WalletColors.textMuted,
+              textColor: isLiked ? const Color(0xFFEF4444) : WalletColors.textMuted,
+              onTap: () => controller.toggleLike(item),
+            );
+          }),
+          const SizedBox(width: WalletSpacing.md),
+
           // Save Action Button (Saves to Bookmarks / Supabase)
           Obx(() {
             final isSaved = controller.isSaved(item.id);
@@ -655,7 +698,7 @@ class FeedScreen extends BaseView<FeedController> {
               onTap: () => controller.toggleSave(item),
             );
           }),
-          const SizedBox(width: WalletSpacing.lg),
+          const SizedBox(width: WalletSpacing.md),
 
           // Share Action Button
           _buildActionButton(

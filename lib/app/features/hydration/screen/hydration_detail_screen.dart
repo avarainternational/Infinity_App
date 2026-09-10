@@ -197,14 +197,46 @@ class HydrationDetailScreen extends BaseView<HydrationDetailController> {
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              '$current / $goal ml',
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                color: AppColors.textDark,
-                letterSpacing: -0.4,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '$current / $goal ml',
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.textDark,
+                    letterSpacing: -0.4,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => _showChangeGoalBottomSheet(context),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.cyanBadgeBg,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.cyanPillBorder),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.edit_rounded, size: 12, color: AppColors.primary),
+                        SizedBox(width: 4),
+                        Text(
+                          'Edit Goal',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 4),
             Text(
@@ -493,6 +525,73 @@ class HydrationDetailScreen extends BaseView<HydrationDetailController> {
                 icon: Icons.sports_bar_rounded,
               ),
             ],
+          ),
+          const SizedBox(height: 14),
+
+          // 1 Sip Amount Configuration Bar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.neutralSurface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.borderLight),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.touch_app_rounded, size: 18, color: AppColors.primary),
+                    ),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '1 Sip / Droplet Amount',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        Obx(() => Text(
+                              'Logs ${controller.sipAmountMl.value} ml on 1-tap/hold',
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                color: AppColors.textSlate,
+                              ),
+                            )),
+                      ],
+                    ),
+                  ],
+                ),
+                GestureDetector(
+                  onTap: () => _showChangeSipBottomSheet(context),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'Customize',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -1228,7 +1327,7 @@ class HydrationDetailScreen extends BaseView<HydrationDetailController> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: GestureDetector(
-                      onTap: () => controller.reminderIntervalMins.value = mins,
+                      onTap: () => controller.setReminderInterval(mins),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
                         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1265,6 +1364,32 @@ class HydrationDetailScreen extends BaseView<HydrationDetailController> {
               }).toList(),
             );
           }),
+          const SizedBox(height: 14),
+
+          // Send Test Instant Notification Button
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: controller.sendTestReminderNotification,
+              icon: const Icon(Icons.notifications_active_rounded,
+                  size: 16, color: AppColors.primary),
+              label: const Text(
+                'Send Test Hydration Notification',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.primary, width: 1.2),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1326,6 +1451,365 @@ class HydrationDetailScreen extends BaseView<HydrationDetailController> {
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+
+  void _showChangeGoalBottomSheet(BuildContext context) {
+    double currentVal = controller.dailyGoalMl.value.toDouble();
+    final textController = TextEditingController(text: currentVal.toInt().toString());
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Container(
+              padding: EdgeInsets.only(
+                top: 20,
+                left: 20,
+                right: 20,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFCBD5E1),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Change Daily Water Goal',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 20, color: AppColors.textSlate),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Customize your daily target or calculate automatically from your metrics.',
+                    style: TextStyle(fontSize: 12.5, color: AppColors.textSlate),
+                  ),
+                  const SizedBox(height: 18),
+
+                  // Display Current Selection
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.iceBlueBg,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: AppColors.iceBlueBorder),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.water_drop_rounded, color: AppColors.primary, size: 24),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${currentVal.toInt()} ml / day',
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.primary,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Slider
+                  Slider(
+                    value: currentVal.clamp(1000.0, 5000.0),
+                    min: 1000.0,
+                    max: 5000.0,
+                    divisions: 80,
+                    activeColor: AppColors.primary,
+                    inactiveColor: AppColors.iceBlueBorder,
+                    onChanged: (val) {
+                      setState(() {
+                        currentVal = ((val + 25) ~/ 50) * 50.0;
+                        textController.text = currentVal.toInt().toString();
+                      });
+                    },
+                  ),
+
+                  // Preset Chips
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [1500, 2000, 2500, 3000, 3500].map((preset) {
+                      final isSelected = currentVal.toInt() == preset;
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            currentVal = preset.toDouble();
+                            textController.text = preset.toString();
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.primary : AppColors.neutralSurface,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSelected ? AppColors.primary : AppColors.borderLight,
+                            ),
+                          ),
+                          child: Text(
+                            '$preset ml',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                              color: isSelected ? Colors.white : AppColors.textDark,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 18),
+
+                  // Recalculate with Biometrics Button
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      final recommended = controller.calculatedRecommendedGoal;
+                      setState(() {
+                        currentVal = recommended.toDouble();
+                        textController.text = recommended.toString();
+                      });
+                    },
+                    icon: const Icon(Icons.auto_awesome_rounded, size: 16, color: AppColors.primary),
+                    label: Text(
+                      'Recalculate with Biometrics (${controller.calculatedRecommendedGoal} ml)',
+                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.primary),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.primary, width: 1.2),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      minimumSize: const Size.fromHeight(44),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Save CTA
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        controller.updateDailyGoal(currentVal.toInt());
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      child: const Text(
+                        'Save Daily Goal',
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showChangeSipBottomSheet(BuildContext context) {
+    int selectedSip = controller.sipAmountMl.value;
+
+    final presets = [
+      {'ml': 150, 'name': 'Small Cup', 'desc': 'Espresso / small cup', 'icon': Icons.local_cafe_rounded},
+      {'ml': 200, 'name': 'Tea Mug', 'desc': 'Standard tea cup', 'icon': Icons.emoji_food_beverage_rounded},
+      {'ml': 250, 'name': 'Regular Glass', 'desc': 'Standard 250 ml glass', 'icon': Icons.local_drink_rounded},
+      {'ml': 350, 'name': 'Tumbler', 'desc': 'Desk mug or medium tumbler', 'icon': Icons.sports_bar_rounded},
+      {'ml': 500, 'name': 'Water Bottle', 'desc': 'Half-liter bottle', 'icon': Icons.water_drop_rounded},
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Container(
+              padding: EdgeInsets.only(
+                top: 20,
+                left: 20,
+                right: 20,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFCBD5E1),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Configure 1 Sip Amount',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 20, color: AppColors.textSlate),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Select how much water you typically log in one sip or droplet hold.',
+                    style: TextStyle(fontSize: 12.5, color: AppColors.textSlate),
+                  ),
+                  const SizedBox(height: 16),
+
+                  Column(
+                    children: presets.map((item) {
+                      final ml = item['ml'] as int;
+                      final name = item['name'] as String;
+                      final desc = item['desc'] as String;
+                      final icon = item['icon'] as IconData;
+                      final isSelected = selectedSip == ml;
+
+                      return GestureDetector(
+                        onTap: () => setState(() => selectedSip = ml),
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.iceBlueBg : AppColors.neutralSurface,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: isSelected ? AppColors.primary : AppColors.borderLight,
+                              width: isSelected ? 1.5 : 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: isSelected ? AppColors.primary : const Color(0xFFE2E8F0),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(icon, color: isSelected ? Colors.white : AppColors.textDark, size: 18),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      name,
+                                      style: TextStyle(
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: isSelected ? AppColors.primary : AppColors.textDark,
+                                      ),
+                                    ),
+                                    Text(
+                                      desc,
+                                      style: const TextStyle(fontSize: 11, color: AppColors.textSlate),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Text(
+                                '$ml ml',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                  color: isSelected ? AppColors.primary : AppColors.textDark,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        controller.updateSipAmount(selectedSip);
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      child: const Text(
+                        'Apply Sip Amount',
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         );
       },
     );

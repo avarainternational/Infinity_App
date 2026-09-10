@@ -117,3 +117,73 @@ Adopt the **Option 1 — Shadcn Wallet Design System** direction as the standard
 - Added dedicated `WalletColors`, `WalletSpacing`, `WalletRadius`, `WalletShadows`, and `WalletTextStyles` design tokens in `wallet_ui_metrics.dart`.
 - Refactored `WalletScreen`, `SectionCard`, `WalletReceiveScreen`, `WalletSendScreen`, `WalletSendReviewScreen`, `WalletTransactionHistoryScreen`, and `WalletSendScanScreen` to strictly adhere to the Option 1 Shadcn design specifications.
 
+## 2026-09-07 — Resilient 1-on-1 Synergy Linking & Live Hydration Meter Sync
+
+### Decision
+Enhance `SynergyRepositoryImpl`, `PartnerDetailController`, and `HomeController` to provide idempotent bidirectional pairing, resilient single-row queries, real-time hydration meter sync, and complete timeline log retrieval.
+
+### Reason
+- Resolves crashes caused by duplicate key violations on `idx_unique_active_pair` when partner B enters partner A's invite code.
+- Resolves Postgrest exceptions caused by `.maybeSingle()` when multiple pairing attempts occurred.
+- Corrects timezone-induced data loss in partner daily water intake calculations by matching on `log_date`.
+- Ensures `hasActivePartner` and `HomeController.partners` are updated instantly without popping screens unexpectedly.
+
+### Result
+- `SynergyRepositoryImpl.connectPartnerWithCode`: checks for existing pairs in both directions first, reactivates existing pairs instead of crashing, and deactivates any other active pairs for the user.
+- `SynergyRepositoryImpl.getActivePair`: uses `.order('created_at', ascending: false).limit(1)`.
+- `SynergyRepositoryImpl.getPartnerTodayIntake`: matches `log_date.eq.$dateStr` and timestamp range, with local repository fallback.
+- Added `getPartnerTodayWaterLogs` and `getPartnerPastDays` for live timelines.
+- `HomeController`: reactive `SynergyPartner` (`intakeMl`, `goalMl`), subscribes to Supabase Realtime so Home screen gauge updates dynamically.
+- `PartnerDetailScreen`: graceful empty states for logs and reminders, user invite code display in connection dialog, and safe disconnect action.
+
+## 2026-09-07 — Native Notifications, Dynamic Daily Goal & 1 Sip Amount Customization
+
+### Decision
+1. Implement a real notification system utilizing `flutter_local_notifications` with timezone-aware scheduling, instant 1-on-1 partner synergy nudges, and milestone celebration alerts.
+2. Implement user-configurable daily water goals with preset shortcuts, visual sliders, and instant biometric recalculations (based on weight, height, age, gender, and activity level).
+3. Implement user-configurable "1 Sip" quick-log amount (persisted locally and synced with the floating droplet quick-action).
+4. Implement comprehensive biometric hydration calibration on signup/login.
+
+### Reason
+- Eliminates placeholder/dummy reminders with genuine local push notifications on Android & iOS.
+- Empowers users to personalize their hydration target and vessel sizes to match their personal bottles and cups.
+- Provides scientific, personalized hydration recommendations based on biometrics right from user onboarding.
+
+### Result
+- Added `NotificationService` with dedicated Android channels, permission handling, periodic zoned hydration reminders (8 AM - 10 PM), and instant nudges.
+- Enhanced `UserProfileModel.computeRecommendedGoal` with multi-factor biometrics (weight, height, age, gender, activity level).
+- Added `updateDailyGoal` and `updateSipAmount` across `HydrationDetailController`, `ProfileController`, and `UserRepositoryImpl`.
+- Connected floating water droplet quick-log to reactive `sipAmountMl`.
+- Realtime partner nudges trigger instant native device notifications.
+- All 48 test suites passing.
+
+## 2026-09-09 — Cloudflare Worker Reverse-Proxy for Supabase Access Without VPN
+
+### Decision
+Direct Supabase initialization and configuration through a Cloudflare Worker reverse-proxy endpoint (`https://supabase-proxy-infinity-wellness.avarainternational.workers.dev`) while preserving public anon credentials.
+
+### Reason
+- Direct network traffic to `*.supabase.co` domains is throttled or completely blocked by local ISPs/telecoms in certain target regions (e.g., Myanmar), requiring users to enable a third-party VPN to authenticate or sync data.
+- Routing requests through Cloudflare Workers bypasses domain-level and IP-level firewall blocks, allowing all app users to access Supabase Auth, PostgreSQL REST endpoints, and Realtime WebSocket channels without needing a VPN.
+
+### Result
+- Added direct `Supabase.initialize` in `lib/main.dart` pointing to `https://supabase-proxy-infinity-wellness.avarainternational.workers.dev`.
+- Updated `assets/config/supabase_config.local.json`, `assets/config/supabase_config.example.json`, and `lib/app/core/config/supabase_config.dart`.
+- Updated `SupabaseService.init()` to safely reuse any pre-existing `Supabase.instance`, ensuring seamless interoperability and avoiding double-initialization runtime errors.
+
+## 2026-09-09 — Interactive Feed Detail Screen & Media Normalization
+
+### Decision
+1. Transform feed post cards in both `FeedScreen` and `HomeScreen` into clickable interactive elements navigating to a dedicated `FeedDetailScreen` (`Routes.feedDetail`).
+2. Implement `ImageUrlHelper` to dynamically normalize Supabase storage URLs through the active Cloudflare proxy.
+3. Equip the detail screen with reactive Bookmarking (`saved_feed_posts`), Liking with dynamic counters, and formatted snippet sharing.
+
+### Reason
+- Users need to read full health literacy articles, examine Myth vs. Fact evidence breakdowns, and save posts to their personal library.
+- Media URLs stored in Supabase point to `*.supabase.co`, which were blocked without a proxy in Myanmar.
+
+### Result
+- Added `Routes.feedDetail`, `FeedDetailBinding`, `FeedDetailController`, and `FeedDetailScreen`.
+- Wrapped feed cards in `FeedScreen` and `HomeScreen` with `Material` and `InkWell`.
+- Added 9 new unit and widget tests in `test/feed_detail_test.dart` (total 57 test suites passing).
+

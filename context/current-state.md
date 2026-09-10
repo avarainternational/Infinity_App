@@ -1,6 +1,6 @@
 # Current State
 
-Last synchronized: 2026-08-19
+Last synchronized: 2026-09-07
 
 ## Project Pivot & Truth
 
@@ -31,7 +31,9 @@ The repository is structured to migrate from the initial monolithic prototype sh
 1. **Context & PRD Alignment**: Completed context files alignment (`AGENTS.md`, `project-overview.md`, `current-state.md`, `architecture.md`, `code-standards.md`, `ui-context.md`, `progress-tracker.md`, `decision-log.md`, `ai-workflow-rules.md`).
 2. **UI & Navigation Migration**: Established the 5-tab Super App shell (Home, Feed, Mini-App Store, Wallet, Profile) with dynamic startup routing (`Routes.login` for unauthenticated sessions, `Routes.shell` for authenticated sessions).
 3. **Authentication & Supabase**: Integrated live `supabase_flutter` with Email & Password sign-in / sign-up (including biometrics onboarding for weight, height, activity level, and calculated daily water goal), Google OAuth, deep-link callback filters (`io.supabase.infinitywellness://login-callback/`), reactive `AuthService`, and instant PostgreSQL profile synchronization. Package name migrated to `com.infinitywellness.app`.
-4. **Domain Logic & Data Layer**: Typed repositories (`UserRepository`, `HydrationRepository`, `SynergyRepository`) backed by Supabase PostgreSQL and Realtime subscriptions with offline fallbacks.
+4. **Domain Logic & Data Layer**: Typed repositories (`UserRepository`, `HydrationRepository`, `SynergyRepository`) backed by Supabase PostgreSQL and Realtime subscriptions with offline fallbacks. Fully hardened 1-on-1 friend synergy bidirectional pairing idempotency, case-insensitive invite code search, and Realtime hydration meter synchronization.
+5. **Real Notifications & Dynamic Customization**: Integrated `flutter_local_notifications` and timezone support (`NotificationService`), scheduling automated daylight periodic reminders (8 AM - 10 PM) and instant 1-on-1 partner synergy nudges. Added user-customizable Daily Water Goal with biometric calculation calibration and customizable "1 Sip" volume (50-1000 ml) synced across UI and local preferences.
+6. **Cloudflare Proxy & Interactive Feed Detail Screen**: Bypassed regional ISP firewall blocks using Cloudflare Worker reverse proxy and automated media normalization (`ImageUrlHelper`). Integrated Native Google Sign-In with SHA-1 fingerprints (`google_sign_in` + `signInWithIdToken`). Transformed Feed & Home cards into interactive components opening a dedicated `FeedDetailScreen` with evidence-based reading, myth vs fact breakdown, bookmark saving, liking, and snippet sharing.
 
 ## Implementation Guardrails
 

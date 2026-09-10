@@ -1,5 +1,5 @@
 {
-  "supabaseUrl": "https://sxbwrwvgmlklpojmokye.supabase.co",
+  "supabaseUrl": "https://supabase-proxy-infinity-wellness.avarainternational.workers.dev",
   "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4Yndyd3ZnbWxrbHBvam1va3llIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxMTE2MDIsImV4cCI6MjEwMjY4NzYwMn0.CgAEBdm5UECEXXPfXNaJqDJn0OhMD0VYZNJ1QqO1aVc",
   "redirectUrl": "io.supabase.infinitywellness://login-callback/"
 }

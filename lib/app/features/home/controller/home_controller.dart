@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:infinity_wellness/app/constant/resources/app_images.dart';
 import 'package:infinity_wellness/app/constant/routing/app_route.dart';
 import 'package:infinity_wellness/app/core/base/base_controller.dart';
@@ -11,9 +12,11 @@ import 'package:infinity_wellness/app/data/repositories/hydration_repository.dar
 import 'package:infinity_wellness/app/data/repositories/synergy_repository.dart';
 import 'package:infinity_wellness/app/data/repositories/user_repository.dart';
 import 'package:infinity_wellness/app/data/services/auth_service.dart';
+import 'package:infinity_wellness/app/data/services/notification_service.dart';
 import 'package:infinity_wellness/app/features/feed/controller/feed_controller.dart';
 import 'package:infinity_wellness/app/features/partner/model/partner_detail_models.dart';
 import 'package:infinity_wellness/app/features/shell/controller/shell_controller.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PinnedMiniApp {
   const PinnedMiniApp({
@@ -37,29 +40,31 @@ class SynergyPartner {
   SynergyPartner({
     required this.id,
     required this.name,
-    required this.intakeMl,
-    required this.goalMl,
+    required int intakeMl,
+    required int goalMl,
     this.avatarEmoji,
     String themeKey = 'love',
     List<PartnerDayRecord>? pastDays,
     List<PartnerReminderLog>? reminders,
     List<PartnerWaterLog>? waterLogs,
-  })  : themeKey = themeKey.obs,
+  })  : intakeMl = intakeMl.obs,
+        goalMl = goalMl.obs,
+        themeKey = themeKey.obs,
         pastDays = (pastDays ?? []).obs,
         reminders = (reminders ?? []).obs,
         waterLogs = (waterLogs ?? []).obs;
 
   final String id;
   final String name;
-  final int intakeMl;
-  final int goalMl;
+  final RxInt intakeMl;
+  final RxInt goalMl;
   final String? avatarEmoji;
   final RxString themeKey;
   final RxList<PartnerDayRecord> pastDays;
   final RxList<PartnerReminderLog> reminders;
   final RxList<PartnerWaterLog> waterLogs;
 
-  double get progress => (goalMl > 0) ? (intakeMl / goalMl).clamp(0.0, 1.0) : 0.0;
+  double get progress => (goalMl.value > 0) ? (intakeMl.value / goalMl.value).clamp(0.0, 1.0) : 0.0;
   int get percentage => (progress * 100).toInt();
 
   PartnerThemeOption get theme => PartnerThemes.getByKey(themeKey.value);
@@ -154,6 +159,7 @@ class HomeController extends BaseController {
   // Hydration Daily Snapshot (Real data loaded from Supabase)
   final currentWaterMl = 0.obs;
   final dailyGoalMl = 2600.obs;
+  final sipAmountMl = 250.obs;
   final userThemeKey = 'energetic'.obs;
 
   PartnerThemeOption get userTheme =>
@@ -361,6 +367,34 @@ class HomeController extends BaseController {
   final isLoadingFeed = false.obs;
   final savedPostIds = <String>{}.obs;
 
+  // Likes state (tracked by post ID without text 'likes')
+  final likedPostIds = <String>{}.obs;
+  final postLikesCount = <String, int>{}.obs;
+
+  bool isLiked(String id) => likedPostIds.contains(id);
+
+  int getLikes(FeedItem item) => postLikesCount[item.id] ?? item.likesCount;
+
+  Future<void> toggleLike(FeedItem item) async {
+    final wasLiked = isLiked(item.id);
+    final current = getLikes(item);
+    final newLiked = !wasLiked;
+
+    if (newLiked) {
+      likedPostIds.add(item.id);
+      postLikesCount[item.id] = current + 1;
+    } else {
+      likedPostIds.remove(item.id);
+      postLikesCount[item.id] = (current - 1).clamp(0, 999999);
+    }
+
+    await _feedRepository.toggleLikePost(
+      postId: item.id,
+      isLiking: newLiked,
+      currentLikes: current,
+    );
+  }
+
   bool isSaved(String id) => savedPostIds.contains(id);
 
   FeedRepository get _feedRepository =>
@@ -406,9 +440,7 @@ class HomeController extends BaseController {
     isLoadingFeed.value = true;
     try {
       final posts = await _feedRepository.fetchFeedPosts();
-      if (posts.isNotEmpty) {
-        homeFeedPosts.assignAll(posts);
-      }
+      homeFeedPosts.assignAll(posts);
       await _loadSavedPosts();
     } catch (e) {
       debugPrint('⚠️ Error refreshing home feed: $e');
@@ -421,9 +453,7 @@ class HomeController extends BaseController {
     isLoadingFeed.value = true;
     try {
       final posts = await _feedRepository.fetchFeedPosts();
-      if (posts.isNotEmpty) {
-        homeFeedPosts.assignAll(posts);
-      }
+      homeFeedPosts.assignAll(posts);
     } catch (e) {
       debugPrint('⚠️ Error loading home feed posts: $e');
     } finally {
@@ -496,7 +526,68 @@ class HomeController extends BaseController {
     }
   }
 
+  RealtimeChannel? _partnerChannel;
+
+  void updateActivePartner(SynergyPartner newPartner) {
+    partnerName.value = newPartner.name;
+    synergyStreakDays.value = 1;
+    partners.assignAll([newPartner]);
+    _subscribeToPartnerUpdates(newPartner.id);
+  }
+
+  void clearPartner() {
+    partners.clear();
+    partnerName.value = '';
+    synergyStreakDays.value = 0;
+    _partnerChannel?.unsubscribe();
+    _partnerChannel = null;
+  }
+
+  void _subscribeToPartnerUpdates(String partnerId) {
+    final auth = Get.isRegistered<AuthService>() ? AuthService.to : null;
+    final userId = auth?.currentUser.value?.id ?? '';
+    if (userId.isEmpty || partnerId.isEmpty) return;
+
+    _partnerChannel?.unsubscribe();
+    _partnerChannel = _synergyRepository.subscribeToPartnerUpdates(
+      currentUserId: userId,
+      partnerId: partnerId,
+      onPartnerWaterLogged: (intakeMl) {
+        if (partners.isNotEmpty && partners.first.id == partnerId) {
+          partners.first.intakeMl.value = intakeMl;
+          partners.refresh();
+        }
+      },
+      onNudgeReceived: (nudge) {
+        notificationCount.value += 1;
+        if (Get.isRegistered<NotificationService>()) {
+          NotificationService.to.showInstantNotification(
+            title: '💧 Synergy Nudge from ${partnerName.value}!',
+            body: nudge.message ?? '${partnerName.value} nudged you to hydrate!',
+          );
+        }
+        Get.snackbar(
+          'Partner Nudge! 💧',
+          nudge.message ?? '${partnerName.value} nudged you to hydrate!',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: const Color(0xFF0284C7),
+          colorText: Colors.white,
+          duration: const Duration(seconds: 4),
+        );
+      },
+    );
+  }
+
   Future<void> _loadHomeData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      sipAmountMl.value = prefs.getInt('pref_user_sip_amount_ml') ?? 250;
+      final cachedGoal = prefs.getInt('pref_user_daily_water_goal_ml');
+      if (cachedGoal != null && cachedGoal > 0) {
+        dailyGoalMl.value = cachedGoal;
+      }
+    } catch (_) {}
+
     final auth = Get.isRegistered<AuthService>() ? AuthService.to : null;
     final userId = auth?.currentUser.value?.id ?? '';
 
@@ -526,14 +617,17 @@ class HomeController extends BaseController {
             id: p.id,
             name: p.displayName,
             intakeMl: partnerIntake,
-            goalMl: p.dailyWaterGoalMl,
+            goalMl: p.dailyWaterGoalMl > 0 ? p.dailyWaterGoalMl : 2600,
             themeKey: activePair.themeKey,
           );
           partners.assignAll([realPartner]);
+          _subscribeToPartnerUpdates(p.id);
         } else {
           partners.clear();
           partnerName.value = '';
           synergyStreakDays.value = 0;
+          _partnerChannel?.unsubscribe();
+          _partnerChannel = null;
         }
       }
     } catch (e) {
@@ -662,6 +756,7 @@ class HomeController extends BaseController {
 
   @override
   void onClose() {
+    _partnerChannel?.unsubscribe();
     _bannerTimer?.cancel();
     bannerPageController.dispose();
     calendarScrollController.dispose();
@@ -699,6 +794,15 @@ class HomeController extends BaseController {
       if (auth?.userProfile.value != null) {
         auth!.userProfile.value = auth.userProfile.value!.copyWith(
           wellnessPointsBalance: auth.userProfile.value!.wellnessPointsBalance + totalAwarded,
+        );
+      }
+    }
+
+    if (reachedGoal) {
+      if (Get.isRegistered<NotificationService>()) {
+        NotificationService.to.showInstantNotification(
+          title: 'Daily Goal Reached! 🏆',
+          body: 'Congratulations! You achieved your daily hydration target of ${dailyGoalMl.value} ml! +100 bonus points.',
         );
       }
     }
