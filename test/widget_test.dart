@@ -37,7 +37,6 @@ void main() {
     expect(find.text('ချစ်ရသူတွေနဲ့'), findsOneWidget);
     expect(find.text('ဝေ မျှရင်းဂရုစိုက်လိုက်ပါ'), findsOneWidget);
     expect(find.text('Continue with Google'), findsOneWidget);
-    expect(find.text('Continue in Demo Mode'), findsOneWidget);
     expect(find.text('By Infinity Water'), findsOneWidget);
     expect(find.text('ရေသန့်ထက်ပိုသောရေသန့်'), findsOneWidget);
 
@@ -45,8 +44,11 @@ void main() {
     final googleSignInButton = find.widgetWithText(ElevatedButton, 'Continue with Google');
     expect(googleSignInButton, findsOneWidget);
 
-    // Enter the local prototype without depending on the owner's Supabase.
-    await tester.tap(find.text('Continue in Demo Mode'));
+    // Authenticate and navigate to Shell to test Super App features
+    AuthService.to.userName.value = 'Alex Morgan';
+    AuthService.to.userEmail.value = 'alex.morgan@infinitywellness.io';
+    AuthService.to.isAuthenticated.value = true;
+    Get.offAllNamed(Routes.shell);
     await tester.pumpAndSettle();
 
     // Verify 5 navigation tabs exist on home/shell launch
@@ -96,7 +98,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.person_outline_rounded));
     await tester.pumpAndSettle();
     expect(find.text('My Profile'), findsOneWidget);
-    expect(find.text('Demo User'), findsOneWidget);
+    expect(find.text('Alex Morgan'), findsOneWidget);
 
     // Scroll to Sign Out button
     await tester.ensureVisible(find.text('Sign Out'));

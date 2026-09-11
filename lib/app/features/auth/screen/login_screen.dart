@@ -195,34 +195,7 @@ class LoginScreen extends BaseView<AuthController> {
             ),
           ),
         ),
-        const SizedBox(height: 12),
-
-        SizedBox(
-          height: 50,
-          child: OutlinedButton.icon(
-            onPressed: controller.continueInDemoMode,
-            icon: const Icon(Icons.offline_bolt_rounded, size: 20),
-            label: const Text('Continue in Demo Mode'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.primary,
-              side: const BorderSide(color: AppColors.primary, width: 1.4),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'Explore the prototype without a Supabase account.',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF64748B),
-          ),
-        ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 26),
 
         // Footer Brand Signature
         const Column(

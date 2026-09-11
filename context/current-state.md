@@ -7,7 +7,7 @@
 - The existing native Rewards Shop remains available to Home and Wallet routes.
 - Demo deductions persist through a restricted SharedPreferences JSON bridge and do not change the real wallet balance.
 - The bundled Vue app works offline because `assets/mini_apps/reward_shop/index.html` is packaged in the Flutter APK.
-- Login offers a local Demo Mode for prototype review without Supabase. The committed example configuration is no longer loaded as live credentials; Google OAuth requires an ignored `assets/config/supabase_config.local.json` supplied by the project owner.
+- The committed example Supabase configuration is not loaded as live credentials. Google OAuth requires an ignored `assets/config/supabase_config.local.json` supplied by the project owner.
 - Full implementation and deployment guide: `context/reward-shop-capacitor-guide.md`.
 
 Last synchronized: 2026-08-19
